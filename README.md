@@ -18,4 +18,5 @@ Following files are included:
 * `kr_helper_funcs.py` : helper functions for Keras (e.g. `show_plots()`, `save_model()` and `load_model()`)
 * `kr_breast_cancer.py`: **binary classification** example on the Wisconsin Breast Cancer dataset
 * `kr_iris.py`: **multi-class classification** of the Iris dataset
+* `kr_mnist.py`: **multi-class classification** of the MNIST digits dataset using a MLP and a CNN
 
