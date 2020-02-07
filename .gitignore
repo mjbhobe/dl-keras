@@ -1,0 +1,20 @@
+# ignore data folder
+data
+
+# ignore .vscode folder (Visual Studio code settings)
+.vscode
+
+# ignore model_states folder (saves model states)
+model_states
+
+# ignore __pycache__
+__pycache__
+
+# ignore pyc files
+*.pyc
+
+# ignore pt (checkpoint) files
+*.pt
+
+# ignore tutorial folder (for now)
+tutorial
