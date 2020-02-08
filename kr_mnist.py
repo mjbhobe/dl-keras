@@ -1,5 +1,5 @@
 """
-kr_iris.py: Multiclass classification of MNIST digits dataset using a ANN & then a CNN
+kr_mnist.py: Multiclass classification of MNIST digits dataset using a ANN & then a CNN
 
 @author: Manish Bhobe
 My experiments with Python, Machine Learning & Deep Learning.
