@@ -12,6 +12,7 @@ Usage:
 # imports & tweaks
 import sys, os, random
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import itertools
@@ -59,6 +60,67 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
     import seaborn as sns
     
     """ Useful function to view plot of loss values & 'metric' across the various epochs
+        Works with the history object returned by the fit() or fit_generator() call """
+    assert type(history) is dict
+    
+    # we must have at least loss in the history object
+    assert 'loss' in history.keys(), f"ERROR: expecting \'loss\' as one of the metrics in history object"
+    if metric is not None:
+        assert isinstance(metric, str), "ERROR: expecting a string value for the \'metric\' parameter"
+        assert metric in history.keys(), f"{metric} is not tracked in training history!"
+        
+    loss_metrics = ['loss']
+    if 'val_loss' in history.keys():
+        loss_metrics.append('val_loss')
+    # after above lines, loss_metrics = ['loss', 'val_loss']
+  
+    other_metrics = []
+    if metric is not None:
+        other_metrics.append(metric)
+        if f"val_{metric}" in history.keys():
+            other_metrics.append(f"val_{metric}")
+    # if metric is not None (e.g. if metrics = 'accuracy'), then other_metrics = ['accuracy', 'val_accuracy']
+    
+    # display the plots
+    col_count = 1 if len(other_metrics) == 0 else 2
+    df = pd.DataFrame(history)
+    
+    with sns.axes_style("darkgrid"):
+        sns.set_context("notebook", font_scale=1.1)
+        sns.set_style({"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]})
+
+        f, ax = plt.subplots(nrows=1, ncols=col_count, figsize=((16, 5) if fig_size is None else fig_size))
+        axs = ax[0] if col_count == 2 else ax
+        
+        # plot the losses
+        losses_df = df.loc[:,loss_metrics]
+        losses_df.plot(ax=axs)
+        #ax[0].set_ylim(0.0, 1.0)
+        axs.grid(True)
+        losses_title = 'Training \'loss\' vs Epochs' if len(loss_metrics) == 1 else 'Training & Validation \'loss\' vs Epochs'
+        axs.title.set_text(losses_title)
+        
+        # plot the metric, if specified
+        if metric is not None:
+            metrics_df = df.loc[:,other_metrics]
+            metrics_df.plot(ax=ax[1])
+            ax[1].set_ylim(0.0, 1.0)
+            ax[1].grid(True)
+            metrics_title = f'Training \'{other_metrics[0]}\' vs Epochs' if len(other_metrics) == 1 \
+                else f'Training & Validation \'{other_metrics[0]}\' vs Epochs'
+            ax[1].title.set_text(metrics_title)
+            
+        if plot_title is not None:
+            plt.suptitle(plot_title)
+    
+        plt.show()
+        plt.close()
+        
+def show_plots2(history, metric=None, plot_title=None, fig_size=None):
+    
+    import seaborn as sns
+    
+    """ Useful function to view plot of loss values & 'metric' across the various epochs
         Works with the history object returned by the fit() call """
     assert type(history) is dict
 
@@ -87,7 +149,7 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
         sns.set_style({"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]})
 
         f, ax = plt.subplots(nrows=1, ncols=col_count, figsize=((16, 5) if fig_size is None else fig_size))
-    
+        
         # plot losses on ax[0]
         ax[0].plot(epochs, loss_vals, label='Training \'loss\'')
         if val_loss_vals is not None:
@@ -120,7 +182,6 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
     
         plt.show()
         plt.close()
-
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix',
                           cmap=plt.cm.Blues):
@@ -277,18 +338,23 @@ def load_model_json(base_file_name, load_dir=os.path.join('.', 'keras_models'),
 # custom metrics that can be tracked
 # ----------------------------------------------------------------------------------------
 def recall(y_true, y_pred):
-  true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-  possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-  recall = true_positives / (possible_positives + K.epsilon())
-  return recall
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    recall = true_positives / (possible_positives + K.epsilon())
+    return recall
 
 def precision(y_true, y_pred):
-  true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-  predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-  precision = true_positives / (predicted_positives + K.epsilon())
-  return precision
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    return precision
 
 def f1_score(y_true, y_pred):
-  prec = precision(y_true, y_pred)
-  rec = recall(y_true, y_pred)
-  return 2*((prec*rec)/(prec+rec+K.epsilon()))
+    prec = precision(y_true, y_pred)
+    rec = recall(y_true, y_pred)
+    return 2*((prec*rec)/(prec+rec+K.epsilon()))
+
+def r2_score(y_true, y_pred):
+    SS_res =  K.sum(K.square(y_true - y_pred)) 
+    SS_tot = K.sum(K.square(y_true - K.mean(y_true))) 
+    return ( 1 - SS_res/(SS_tot + K.epsilon()) )

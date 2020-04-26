@@ -1,5 +1,7 @@
 """
-kr_mnist.py: Multiclass classification of MNIST digits dataset using a ANN & then a CNN
+kr_fashion_mnist.py: Multiclass classification of Fashion MNIST digits dataset using
+a DNN (ANN) & then a CNN
+(This code is very similar to the MNIST digits dataset example)
 
 @author: Manish Bhobe
 My experiments with Python, Machine Learning & Deep Learning.
@@ -32,6 +34,7 @@ from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Flatte
 from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 # my helper functions for Keras
 import kr_helper_funcs as kru
 
@@ -49,7 +52,7 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # some globals
 IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS, NUM_CLASSES = 28, 28, 1, 10
-NUM_EPOCHS, BATCH_SIZE, LEARNING_RATE, L2_REG = 25, 64, 0.001, 0.0005
+NUM_EPOCHS, BATCH_SIZE, LEARNING_RATE, L2_REG = 25, 32, 0.001, 0.00075
 MODEL_SAVE_DIR = os.path.join('.', 'model_states')
 
 # --------------------------------------------------------------------------
@@ -57,9 +60,9 @@ MODEL_SAVE_DIR = os.path.join('.', 'model_states')
 # --------------------------------------------------------------------------
 def display_sample(sample_images, sample_labels, sample_predictions=None, num_rows=5, num_cols=10,
                    plot_title=None, fig_size=None):
-    
+
     import seaborn as sns
-  
+
     """ display a random selection of images & corresponding labels, optionally with predictions
         The display is laid out in a grid of num_rows x num_col cells
         If sample_predictions are provided, then each cell's title displays the prediction (if it matches
@@ -68,8 +71,21 @@ def display_sample(sample_images, sample_labels, sample_predictions=None, num_ro
     """
     assert sample_images.shape[0] == num_rows * num_cols
 
+    LABELS = {
+        0: 'T-shirt/Top',
+        1: 'Trouser',
+        2: 'Pullover',
+        3: 'Dress',
+        4: 'Coat',
+        5: 'Sandal',
+        6: 'Shirt',
+        7: 'Sneaker',
+        8: 'Bag',
+        9: 'Ankle Boot'
+    }
+
     with sns.axes_style("whitegrid"):
-        sns.set_context("notebook", font_scale=1.1)
+        sns.set_context("notebook", font_scale=0.90)
         sns.set_style({"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]})
 
         f, ax = plt.subplots(num_rows, num_cols, figsize=((14, 10) if fig_size is None else fig_size),
@@ -79,12 +95,12 @@ def display_sample(sample_images, sample_labels, sample_predictions=None, num_ro
             for c in range(num_cols):
                 image_index = r * num_cols + c
                 ax[r, c].axis("off")
-                # show selected image
+                # show selected 
                 ax[r, c].imshow(sample_images[image_index], cmap="Greys", interpolation='nearest')
 
                 if sample_predictions is None:
                     # show the actual labels in the cell title
-                    title = ax[r, c].set_title("%d" % sample_labels[image_index])
+                    title = ax[r, c].set_title(f"{LABELS[sample_labels[image_index]]}")
                 else:
                     # else check if prediction matches actual value
                     true_label = sample_labels[image_index]
@@ -92,11 +108,11 @@ def display_sample(sample_images, sample_labels, sample_predictions=None, num_ro
                     prediction_matches_true = (true_label == pred_label)
                     if prediction_matches_true:
                         # if actual == prediction, cell title is prediction shown in green font
-                        title = "%d" % true_label
+                        title = f"{LABELS[true_label]}"
                         title_color = 'g'
                     else:
                         # if actual != prediction, cell title is actua/prediction in red font
-                        title = '%d/%d' % (true_label, pred_label)
+                        title = f'{LABELS[true_label]}/{LABELS[pred_label]}'
                         title_color = 'r'
                     # display cell title
                     title = ax[r, c].set_title(title)
@@ -109,11 +125,11 @@ def display_sample(sample_images, sample_labels, sample_predictions=None, num_ro
         plt.close()
 
 def load_data(debug=True):
-    from tensorflow.keras.datasets.mnist import load_data
+    from tensorflow.keras.datasets.fashion_mnist import load_data
     from tensorflow.keras.utils import to_categorical
-    
+
     """
-    loads the MNIST dataset from keras.datasets.mnist package
+    loads the MNIST dataset from keras.datasets.fashion_mnist package
     pre-processes the image & labels data:
       - all image pixels reduced to values between 0-1
       - all labels are one-hot encoded to 10 classes
@@ -128,14 +144,14 @@ def load_data(debug=True):
         print(' - X_train.shape = {}, y_train.shape = {}'.format(X_train.shape, y_train.shape))
         print(' - X_test.shape = {}, y_test.shape = {}'.format(X_test.shape, y_test.shape))
 
-    # Per Andrew Ng's advise from his Structured ML course: 
+    # Per Andrew Ng's advise from his Structured ML course:
     # the test & cross-validation datasets must come from the same distribution
-    # So, we are going to split X_test/y_test into cross-val & test datasets 
+    # So, we are going to split X_test/y_test into cross-val & test datasets
     # (we'll use the fact that X_test/y_test is a labelled dataset to our advantage)
-    # We have 10,000 samples in X_test/y_test - we'll assign 8,000 to X_val/y_val & 2,000 
-    # examples to X_test/y_test (test dataset). This also gives us more records in our 
+    # We have 10,000 samples in X_test/y_test - we'll assign 8,000 to X_val/y_val & 2,000
+    # examples to X_test/y_test (test dataset). This also gives us more records in our
     # training set :).
-    
+
     # shuffle the training set (get rid of any implicit sorting)
     indexes = np.arange(X_train.shape[0])
     indexes = np.random.permutation(indexes)
@@ -187,7 +203,7 @@ def step_lr(epoch):
     global LEARNING_RATE
 
     initial_lr = LEARNING_RATE
-    drop_rate = 0.5
+    drop_rate = 0.25
     epochs_drop = 10.0
     new_lr = initial_lr * math.pow(drop_rate, math.floor((1+epoch)/epochs_drop))
     return new_lr
@@ -197,14 +213,18 @@ def build_model_ann(l2_loss_lambda = None):
 
     model = Sequential([
         Flatten(input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS)),
+        Dense(512, activation='relu', kernel_regularizer=l2_reg),
+        Dropout(0.30),
+        Dense(256, activation='relu', kernel_regularizer=l2_reg),
+        Dropout(0.20),
         Dense(128, activation='relu', kernel_regularizer=l2_reg),
         Dropout(0.10),
         Dense(64, activation='relu', kernel_regularizer=l2_reg),
-        Dropout(0.10),
+        Dropout(0.05),
         Dense(NUM_CLASSES, activation='softmax')
     ])
     opt = Adam(learning_rate=LEARNING_RATE)
-    model.compile(optimizer=opt, loss='sparse_categorical_crossentropy', 
+    model.compile(optimizer=opt, loss='sparse_categorical_crossentropy',
                   metrics=['sparse_categorical_accuracy'])
     return model
 
@@ -212,20 +232,33 @@ def build_model_cnn(l2_loss_lambda = None):
     l2_reg = None if l2_loss_lambda is None else l2(l2_loss_lambda)
 
     model = Sequential([
-        Conv2D(128, kernel_size=(3,3), padding='SAME', activation='relu', kernel_regularizer=l2_reg,
+        Conv2D(256, kernel_size=(5,5), padding='SAME', activation='relu',
+               kernel_regularizer=l2_reg,
                input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS)),
         MaxPooling2D((2, 2)),
         Dropout(0.20),
-        Conv2D(64, kernel_size=(3,3), padding='SAME', activation='relu', kernel_regularizer=l2_reg),
+        Conv2D(128, kernel_size=(5,5), padding='SAME', activation='relu',
+               kernel_regularizer=l2_reg),
+        MaxPooling2D((2, 2)),
+        Dropout(0.15),
+        Conv2D(64, kernel_size=(3,3), padding='SAME', activation='relu',
+               kernel_regularizer=l2_reg),
         MaxPooling2D((2, 2)),
         Dropout(0.10),
         Flatten(),
+        Dropout(0.10),
         Dense(512, activation='relu', kernel_regularizer=l2_reg),
         Dropout(0.20),
+        # Dense(256, activation='relu', kernel_regularizer=l2_reg),
+        # Dropout(0.15),
+        # Dense(128, activation='relu', kernel_regularizer=l2_reg),
+        # Dropout(0.10),
+        # Dense(64, activation='relu', kernel_regularizer=l2_reg),
+        # Dropout(0.05),
         Dense(NUM_CLASSES, activation='softmax')
     ])
-    opt = Adam(learning_rate=LEARNING_RATE)
-    model.compile(optimizer=opt, loss='sparse_categorical_crossentropy', 
+    opt = Adam(learning_rate=LEARNING_RATE, decay=0.005)
+    model.compile(optimizer=opt, loss='sparse_categorical_crossentropy',
                   metrics=['sparse_categorical_accuracy'])
     return model
 
@@ -234,8 +267,8 @@ DO_PREDICTION = True
 SHOW_SAMPLE = True
 SAMPLE_SIZE = 50
 USE_CNN = True
-MODEL_FILE_NAME = 'kr_mnist_cnn' if USE_CNN else 'kr_mnist_dnn' 
-MODEL_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, MODEL_FILE_NAME) 
+MODEL_FILE_NAME = 'kr_fashion_mnist_cnn' if USE_CNN else 'kr_fashion_mnist_dnn'
+MODEL_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, MODEL_FILE_NAME)
 
 def main():
     (X_train, y_train), (X_val, y_val), (X_test, y_test), (test_images, test_labels) = \
@@ -243,7 +276,6 @@ def main():
     print(f"X_train.shape = {X_train.shape} - y_train.shape = {y_train.shape} " +
           f"- X_val.shape = {X_val.shape} - y_val.shape = {y_val.shape} " +
           f"- X_test.shape = {X_test.shape} - y_test.shape = {y_test.shape}")
-    sys.exit(-1)
 
     if SHOW_SAMPLE:
         print(f"Displaying sample of {SAMPLE_SIZE} images...")
@@ -262,9 +294,26 @@ def main():
             model = build_model_ann(l2_loss_lambda=L2_REG)
             print(model.summary())
 
+        datagen = ImageDataGenerator(
+            rotation_range=10,        # randomly rotate between 0-rotation_range angle
+            width_shift_range=0.1,    # randomly shift horizontally by this much
+            height_shift_range=0.1,   # randomly shift vertically by this much
+            shear_range=0.1,          # randomly shear by this much
+            zoom_range=(0.8, 1.2),    # randomly zoom in by this much
+            horizontal_flip=True,
+            fill_mode='nearest'       # fill any pixels lost in xform with nearest
+        )
+
         lr_scheduler = LearningRateScheduler(step_lr)
-        hist = model.fit(X_train, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, 
-                 validation_data=(X_val, y_val), callbacks=[lr_scheduler])
+        # hist = model.fit(X_train, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE,
+        #          validation_data=(X_val, y_val), callbacks=[lr_scheduler])
+
+        hist = model.fit_generator(
+            datagen.flow(X_train, y_train, batch_size=BATCH_SIZE),
+            steps_per_epoch = X_train.shape[0] // BATCH_SIZE,
+            epochs=NUM_EPOCHS, verbose=True,
+            validation_data=(X_val, y_val),
+            callbacks=[lr_scheduler])
 
         kru.show_plots(hist.history, metric='sparse_categorical_accuracy')
 
@@ -301,14 +350,14 @@ def main():
             display_sample(sample_images, sample_labels, sample_predictions,
                 num_rows=5, num_cols=10, plot_title=f'Keras {model_type} - {SAMPLE_SIZE} random predictions')
 
-            del model
+        del model
 
 # --------------------------------------------------------------
 # Results:
 #     MLP/ANN:
-#       - Training acc -> 99.68
-#       - Cross-val acc -> 98.39
-#       - Testing acc -> 98.05
+#       - Training acc -> 92.19
+#       - Cross-val acc -> 88.91
+#       - Testing acc -> 88.25
 #     CNN:
 #       - Training acc -> 99.67
 #       - Cross-val acc -> 99.21
