@@ -1,12 +1,15 @@
 """
 kr_helper_funcs.py - generic helper functions that can be used across Tensorflow & Keras DL code
-@author: Manish Bhobe
-Use this code at your own risk. I am not responsible if your computer explodes of GPU gets fried :P
 
-Usage: 
-    - to import functions from this module, copy the py file to your project folder
-    - import code as follows:
-        import kr_helper_funcs as kru
+@author: Manish Bhobe
+My experiments with Python, Machine Learning & Deep Learning.
+This code is meant for education purposes only & is not intended for commercial/production use!
+Use at your own risk!! I am not responsible if your CPU or GPU gets fried :D
+
+Usage:
+    > Copy this file to any folder in your sys.path or leave in project folder
+    > In the imports section, import this module as 
+        import ke_helper_funcs as kru
 """
 
 # imports & tweaks
