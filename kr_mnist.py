@@ -109,7 +109,7 @@ def display_sample(sample_images, sample_labels, sample_predictions=None, num_ro
         plt.close()
 
 def load_data(debug=True):
-    from tensorflow.keras.datasets.mnist import load_data
+    from tensorflow.keras.datasets import mnist
     from tensorflow.keras.utils import to_categorical
     
     """
@@ -121,7 +121,7 @@ def load_data(debug=True):
       - also saves a copy of non-preprocessed test set for visualization
     """
 
-    (X_train, y_train), (X_test, y_test) = load_data()
+    (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
     if debug:
         print('Before preprocessing:')
