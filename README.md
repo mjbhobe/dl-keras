@@ -14,7 +14,7 @@ This code is meant for education purposes only & is not intended for commercial/
 * Matplotlib & Seaborn plotting libraries
 * itertools
 
-NOTE: I use Tensorflow's implementation of Keras (i.e. `tf.keras`), so no extra Keras installation needed!
+**NOTE:** I use Tensorflow's implementation of Keras (i.e. `tf.keras`), so no extra Keras installation needed!
 
 Following files are included:
 * `kr_helper_funcs.py` : helper functions for Keras (e.g. `show_plots()`, `save_model()` and `load_model()`)
