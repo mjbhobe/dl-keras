@@ -6,9 +6,9 @@ Written by: Manish Bhobe
 License: MIT License<br/>
 This code is meant for education purposes only & is not intended for commercial/production use!
 
-**Requirements**:
+## Requirements
 * Python 3.7 or greater
-* Tensorflow > 1.15 (most examples have been tested on Tensorflow 2.0)
+* Tensorflow > 2.0  (on my laptop I use the CPU version. On Google Colab, I use GPU version)
 * Numpy
 * Pandas (for loading CSV datasets)
 * Matplotlib & Seaborn plotting libraries
@@ -16,6 +16,13 @@ This code is meant for education purposes only & is not intended for commercial/
 
 **NOTE:** I use Tensorflow's implementation of Keras (i.e. `tf.keras`), so no extra Keras installation needed!
 
+## Installing Tensorflow locally (CPU version)
+On the commandline type the following:
+```bash
+$> pip install tensorflow==2.0
+```
+
+## Contents
 Following files are included:
 * `kr_helper_funcs.py` : helper functions for Keras (e.g. `show_plots()`, `save_model()` and `load_model()`)
 * `kr_breast_cancer.py`: **binary classification** example on the Wisconsin Breast Cancer dataset
