@@ -119,73 +119,6 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
         plt.show()
         plt.close()
         
-def show_plots2(history, metric=None, plot_title=None, fig_size=None):
-    
-    import seaborn as sns
-    
-    """ Useful function to view plot of loss values & 'metric' across the various epochs
-        Works with the history object returned by the fit() call """
-    assert type(history) is dict
-
-    # NOTE: the history object should always have loss & acc (for training data), but MAY have
-    # val_loss & val_acc for validation data
-    loss_vals = history['loss']
-    val_loss_vals = history['val_loss'] if 'val_loss' in history.keys() else None
-
-    # we also show metric, if specified by user
-    metric_vals, val_metric_vals = None, None
-
-    if metric is not None:
-        assert isinstance(metric, str), "expecting a string value for the \'metric\' parameter"
-        assert metric in history.keys(), f"{metric} is not tracked in training history!"
-        metric_vals = history[metric]
-        # check if validation metrics are also tracked in history (this is optional)
-        val_metric_name = f"val_{metric}"
-        val_metric_vals = history[val_metric_name] if val_metric_name in history.keys() else None
-        
-    epochs = range(1, len(history['loss']) + 1)
-    
-    col_count = 1 if ((metric_vals is None) and (val_metric_vals is None)) else 2
-    
-    with sns.axes_style("darkgrid"):
-        sns.set_context("notebook", font_scale=1.1)
-        sns.set_style({"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]})
-
-        f, ax = plt.subplots(nrows=1, ncols=col_count, figsize=((16, 5) if fig_size is None else fig_size))
-        
-        # plot losses on ax[0]
-        ax[0].plot(epochs, loss_vals, label='Training \'loss\'')
-        if val_loss_vals is not None:
-            ax[0].plot(epochs, val_loss_vals, label='Validation \'loss\'')
-            ax[0].set_title('Training & Validation \'loss\'')
-            ax[0].legend(loc='best')
-        else:
-            ax[0].set_title('Training \'loss\'')
-    
-        ax[0].set_xlabel('Epochs')
-        ax[0].set_ylabel('\'loss\'')
-        ax[0].grid(True)
-    
-        # plot metric, if specified by user
-        if col_count == 2:
-            ax[1].plot(epochs, metric_vals, label=f'Training \'{metric}\'')
-            if val_metric_vals is not None:
-                ax[1].plot(epochs, val_metric_vals, label=f'Validation \'{metric}\'')
-                ax[1].set_title(f'Training & Validation \'{metric}\'')
-                ax[1].legend(loc='best')
-            else:
-                ax[1].set_title(f'Training \'{metric}\'')
-
-            ax[1].set_xlabel('Epochs')
-            ax[1].set_ylabel(f'\'{metric}\'')
-            ax[1].grid(True)
-    
-        if plot_title is not None:
-            plt.suptitle(plot_title)
-    
-        plt.show()
-        plt.close()
-
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix',
                           cmap=plt.cm.Blues):
     """
@@ -250,6 +183,15 @@ def save_model(model, base_file_name, save_dir=os.path.join('.', 'model_states')
         model_save_path = os.path.join(save_dir, base_file_name)
     else:
         # user passed in complete path e.g. './save_states/kr_model.h5'
+        # create the directories if they don't exist
+        save_dir = os.path.dirname(base_file_name)
+        if not os.path.exists(save_dir):
+            try:
+                os.mkdir(save_dir)
+            except OSError as err:
+                print("Unable to create folder {} to save Keras model. Can't continue!".format(save_dir))
+                raise err
+
         model_save_path = base_file_name
         
     #model_save_path = os.path.join(save_dir, base_file_name)
@@ -336,6 +278,44 @@ def load_model_json(base_file_name, load_dir=os.path.join('.', 'keras_models'),
             load_dir, (base_file_name + ".json"), (base_file_name + ".h5"))
         raise IOError(msg)
     return loaded_model
+
+def extract_files(arch_path, to_dir='.'):
+    """extracts all files from a archive file (zip, tar. tar.bz2 file)
+       at arch_path to the 'to_dir' directory """
+    import os, tarfile, zipfile
+    
+    if os.path.exists(arch_path):
+        supported_extensions = ['.zip', '.tar.gz', '.tgz', '.tar.bz2', '.tbz', '.npz']
+        arch_exts = [arch_path.endswith(ext) for ext in supported_extensions]
+        
+        if np.any(arch_exts):
+            # if extension is any of our supported extension, we are ok
+            opener_triplets = [('zipfile.ZipFile', zipfile.ZipFile, 'r'),
+                               ('tarfile.open (for .tar.gz or .tgz file)', tarfile.open, 'r:gz'),
+                               ('tarfile.open (for .tar.bz2 or .tbz file)', tarfile.open, 'r:bz2')]
+            opened_successfully = False
+            curr_dir = os.getcwd()
+            os.chdir(to_dir)
+
+            try:
+                for opener_str, opener, mode in opener_triplets:
+                    try:
+                        # try various options to open archive file
+                        with opener(arch_path, mode) as f:
+                            opened_successfully = True
+                            print(f"Extracting files from archive using {opener_str} opener...", flush=True)
+                            f.extractall()
+                            break
+                    except:
+                        continue
+            finally:
+                os.chdir(curr_dir)
+                if not opened_successfully:
+                    raise ValueError(f"Could not extract '{arch_path}' as no appropriate extractor is found")
+        else:
+            raise ValueError(f"Unsupported archive file {arch_path} - only one of {supported_extensions} supported")
+    else:
+        raise ValueError(f"{arch_path} - path does not exist!")
   
 # ----------------------------------------------------------------------------------------
 # custom metrics that can be tracked

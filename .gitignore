@@ -1,8 +1,14 @@
-# ignore data folder
+# ignore data folder & all sub-folders
 data
 
 # ignore .vscode folder (Visual Studio code settings)
 .vscode
+
+# ignore my kaggle.json file
+kaggle.json
+
+# ignore Pycharm files
+.idea
 
 # ignore notebook checkpoints
 .ipynb_checkpoints
