@@ -13,7 +13,9 @@ Usage:
 """
 
 # imports & tweaks
-import sys, os, random
+import sys
+import os
+import random
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -36,8 +38,10 @@ else:
     tf.compat.v1.set_random_seed(seed)
 
 # -----------------------------------------------------------------------------------------------
-# Generic helper functions 
+# Generic helper functions
 # -----------------------------------------------------------------------------------------------
+
+
 def progbar_msg(curr_tick, max_tick, head_msg, tail_msg, final=False):
     # --------------------------------------------------------------------
     # Keras like progress bar, used when copying files to show progress
@@ -57,68 +61,71 @@ def progbar_msg(curr_tick, max_tick, head_msg, tail_msg, final=False):
             head_msg, len_max_tick, max_tick, len_max_tick, max_tick, '=' * progbar_len, tail_msg,
             ' ' * 35)
         print('\r%s' % prog_msg, end='', flush=True)
-        
+
+
 def show_plots(history, metric=None, plot_title=None, fig_size=None):
-    
+
     import seaborn as sns
-    
+
     """ Useful function to view plot of loss values & 'metric' across the various epochs
         Works with the history object returned by the fit() or fit_generator() call """
     assert type(history) is dict
-    
+
     # we must have at least loss in the history object
     assert 'loss' in history.keys(), f"ERROR: expecting \'loss\' as one of the metrics in history object"
     if metric is not None:
         assert isinstance(metric, str), "ERROR: expecting a string value for the \'metric\' parameter"
         assert metric in history.keys(), f"{metric} is not tracked in training history!"
-        
+
     loss_metrics = ['loss']
     if 'val_loss' in history.keys():
         loss_metrics.append('val_loss')
     # after above lines, loss_metrics = ['loss', 'val_loss']
-  
+
     other_metrics = []
     if metric is not None:
         other_metrics.append(metric)
         if f"val_{metric}" in history.keys():
             other_metrics.append(f"val_{metric}")
     # if metric is not None (e.g. if metrics = 'accuracy'), then other_metrics = ['accuracy', 'val_accuracy']
-    
+
     # display the plots
     col_count = 1 if len(other_metrics) == 0 else 2
     df = pd.DataFrame(history)
-    
+
     with sns.axes_style("darkgrid"):
         sns.set_context("notebook", font_scale=1.1)
         sns.set_style({"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]})
 
         f, ax = plt.subplots(nrows=1, ncols=col_count, figsize=((16, 5) if fig_size is None else fig_size))
         axs = ax[0] if col_count == 2 else ax
-        
+
         # plot the losses
-        losses_df = df.loc[:,loss_metrics]
+        losses_df = df.loc[:, loss_metrics]
         losses_df.plot(ax=axs)
         #ax[0].set_ylim(0.0, 1.0)
         axs.grid(True)
-        losses_title = 'Training \'loss\' vs Epochs' if len(loss_metrics) == 1 else 'Training & Validation \'loss\' vs Epochs'
+        losses_title = 'Training \'loss\' vs Epochs' if len(
+            loss_metrics) == 1 else 'Training & Validation \'loss\' vs Epochs'
         axs.title.set_text(losses_title)
-        
+
         # plot the metric, if specified
         if metric is not None:
-            metrics_df = df.loc[:,other_metrics]
+            metrics_df = df.loc[:, other_metrics]
             metrics_df.plot(ax=ax[1])
             ax[1].set_ylim(0.0, 1.0)
             ax[1].grid(True)
             metrics_title = f'Training \'{other_metrics[0]}\' vs Epochs' if len(other_metrics) == 1 \
                 else f'Training & Validation \'{other_metrics[0]}\' vs Epochs'
             ax[1].title.set_text(metrics_title)
-            
+
         if plot_title is not None:
             plt.suptitle(plot_title)
-    
+
         plt.show()
         plt.close()
-        
+
+
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix',
                           cmap=plt.cm.Blues):
     """
@@ -138,11 +145,12 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         plt.text(j, i, cm[i, j], horizontalalignment="center",
-            color="white" if cm[i, j] > thresh else "black")
+                 color="white" if cm[i, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
+
 
 def time_taken_as_str(start_time, end_time):
     secs_elapsed = end_time - start_time
@@ -163,9 +171,44 @@ def time_taken_as_str(start_time, end_time):
         ret = 'Time taken - less than 1 sec'
     return ret
 
-def save_model(model, base_file_name, save_dir=os.path.join('.', 'model_states')):
+
+def save_model(model, file_path):
+    """ save model structure & weights to path provided """
+    save_dir, save_filename = os.path.splitpath(file_path)
+
+    if not os.path.exists(save_dir):
+        # create directory from file_path, if it does not exist
+        # e.g. if file_path = '/home/user_name/keras/model_states/model.hd5' and the
+        # '/home/user_name/keras/model_states' does not exist, it is created
+        try:
+            os.mkdir(save_dir)
+        except OSError as err:
+            print(f"Unable to create folder {save_dir} to save model!")
+            raise err
+
+    # now save the model to file_path
+    model.save(file_path)
+    print(f"Keras model saved to {file_path}")
+
+
+def load_model(file_path, custom_metrics_map=None):
+    """ load Keras model from path """
+    from tensorflow.keras import models
+
+    if not os.path.exists(file_path):
+        raise IOError(f"Cannot load Keras model {file_path} - invalid path!")
+
+    # load the state/weights etc. from file_path
+    # @see: https://github.com/keras-team/keras/issues/3911
+    # useful when you have custom metrics
+    model = models.load_model(file_path, custom_objects=custom_metrics_map)
+    print(f"Keras model loaded from {file_path}")
+    return model
+
+
+def save_model2(model, base_file_name, save_dir=os.path.join('.', 'model_states')):
     """ save everything to one HDF5 file """
-    
+
     # save the model
     if not base_file_name.lower().endswith('.h5'):
         base_file_name = base_file_name + '.h5'
@@ -193,18 +236,18 @@ def save_model(model, base_file_name, save_dir=os.path.join('.', 'model_states')
                 raise err
 
         model_save_path = base_file_name
-        
+
     #model_save_path = os.path.join(save_dir, base_file_name)
     model.save(model_save_path)
     print('Saved model to file %s' % model_save_path)
-    
-def load_model(base_file_name, save_dir=os.path.join('.', 'model_states'), 
-               custom_metrics_map=None, use_tf_keras_impl=True):
-                
+
+
+def load_model2(base_file_name, save_dir=os.path.join('.', 'model_states'),
+                custom_metrics_map=None, use_tf_keras_impl=True):
     """load model from HDF5 file"""
     if not base_file_name.lower().endswith('.h5'):
         base_file_name = base_file_name + '.h5'
-        
+
     # base_file_name could be just a file name or complete path
     if (len(os.path.dirname(base_file_name)) == 0):
         # only file name specified e.g. kr_model.h5
@@ -215,22 +258,109 @@ def load_model(base_file_name, save_dir=os.path.join('.', 'model_states'),
 
     if not os.path.exists(model_save_path):
         raise IOError('Cannot find model state file at %s!' % model_save_path)
-        
+
     # load the state/weights etc.
     if use_tf_keras_impl:
-        from tensorflow.keras.models import load_model 
+        from tensorflow.keras.models import load_model
     else:
         from keras.models import load_model
 
-    # load the state/weights etc. from .h5 file        
+    # load the state/weights etc. from .h5 file
     # @see: https://github.com/keras-team/keras/issues/3911
     # useful when you have custom metrics
     model = load_model(model_save_path, custom_objects=custom_metrics_map)
     print('Loaded Keras model from %s' % model_save_path)
     return model
 
-def save_model_json(model, base_file_name, save_dir=os.path.join('.','model_states')):
-    """ save the model structure to JSON & weights to HD5 """    
+
+def save_model_json(model, file_path):
+    """ save the model structure to a JSON file & weights to HD5 """
+    save_dir, save_filename = os.path.splitpath(file_path)
+    file_name, file_ext = os.path.splitext(save_filename)
+
+    if not os.path.exists(save_dir):
+        # create directory from file_path, if it does not exist
+        # e.g. if file_path = '/home/user_name/keras/model_states/model.hd5' and the
+        # '/home/user_name/keras/model_states' does not exist, it is created
+        try:
+            os.mkdir(save_dir)
+        except OSError as err:
+            print(f"Unable to create folder {save_dir} to save model!")
+            raise err
+
+    # model structure is saved to $(save_dir)/file_name.json
+    # weights are saved to $(save_dir)/file_name.hd5
+    # e.g. if file_path = '/home/user_name/keras/model_states/model.hd5', then
+    # json saved to '/home/user_name/keras/model_states/model.json'
+    # weights saved to '/home/user_name/keras/model_states/model.hd5'
+    json_model = model.to_json()
+    json_file_path = os.path.join(save_dir, (file_name + ".json"))
+    h5_file_path = os.path.join(save_dir, (file_name + ".hd5"))
+
+    with open(json_file_path, "w") as json_file:
+        json_file.write(json_model)
+    # serialize weights to HDF5\n",
+    model.save_weights(h5_file_path)
+    print(f"Saved model to files {json_file_path} and weights to {h5_file_path}")
+
+
+def load_model_json(model, json_file_path, weights_path=None):
+    """ 
+    loads model structure & weights from JSON 
+        @params:
+            file_path - full (or relative) path to JSON file. 
+                If this path does not exist, exception is thrown
+            weights_path (optional) - use if weights are stored in a
+                separate file name, they will be loaded from that path.
+                If this path is specified and does not exist, exception is thrown
+         Examples:
+             call -> load_model_json(json_file_path = './model_states/model.json') 
+               JSON will be loaded from './model_states/model.json'
+               Weights will be loaded from './model_states/model.h5' or ''./model_states/model.hd5'
+
+             If you have a separate file holding weights, pass it's path in the weights_file param
+              call -> load_model_json(json_file_path = './model_states/model.json',
+                                     weights_path='/home/model_weights/abc.h5')
+               JSON will be loaded from './model_states/model.json'
+               Weights will be loaded from '/home/model_weights/abc.h5'
+    """
+
+    from tensorflow.keras.models import model_from_json
+
+    save_dir, save_filename = os.path.splitpath(json_file_path)
+
+    if not os.path.exists(json_file_path):
+        raise IOError(f"Cannot load Keras model {file_path} - invalid path!")
+
+    weights_path1, weights_path2 = None, None, None
+
+    if weights_path is None:
+        file_name, file_ext = os.path.splitext(save_filename)
+        weights_path1 = os.path.join(save_dir, file_name, '.h5')
+        if os.path.exists(weights_path1):
+            weights_path = weights_path1
+        else:
+            weights_path2 = os.path.join(save_dir, file_name, '.hd5')
+            if os.path.exists(weights_path2):
+                weights_path = weights_path2
+
+        if weights_path is None:
+            # still none, raise exception - can't figure out weights_path
+            raise IOError(f"Cannot locate weights path - tried {weights_path1} and {weights_path2}\n" +
+                          f"Suggest you use specify explicit weights file path")
+
+    # load model from json_file_path & weights from weights_path
+    model = None
+    with open(json_file_path, "r") as json_file:
+        model = model_from_json(json_file.read())
+        model.load_weights(weights_path)
+        print(f"Loaded Keras model structure from {json_file_path} and weights from {weights_path}")
+
+    return model
+
+
+def save_model_json2(model, base_file_name, save_dir=os.path.join('.', 'model_states')):
+    """ save the model structure to JSON & weights to HD5 """
     # check if save_dir exists, else create it
     if not os.path.exists(save_dir):
         try:
@@ -238,12 +368,12 @@ def save_model_json(model, base_file_name, save_dir=os.path.join('.','model_stat
         except OSError as err:
             print("Unable to create folder {} to save Keras model. Can't continue!".format(save_dir))
             raise err
-            
+
     # model structure is saved to $(save_dir)/base_file_name.json
     # weights are saved to $(save_dir)/base_file_name.h5
     model_json = model.to_json()
     json_file_path = os.path.join(save_dir, (base_file_name + ".json"))
-    h5_file_path = os.path.join(save_dir, (base_file_name + ".h5"))            
+    h5_file_path = os.path.join(save_dir, (base_file_name + ".h5"))
 
     with open(json_file_path, "w") as json_file:
         json_file.write(model_json)
@@ -251,8 +381,9 @@ def save_model_json(model, base_file_name, save_dir=os.path.join('.','model_stat
     model.save_weights(h5_file_path)
     print("Saved model to files %s and %s" % (json_file_path, h5_file_path))
 
-def load_model_json(base_file_name, load_dir=os.path.join('.', 'keras_models'),
-                          use_tf_keras_impl=True):
+
+def load_model_json2(base_file_name, load_dir=os.path.join('.', 'keras_models'),
+                     use_tf_keras_impl=True):
     """ loads model structure & weights from previously saved state """
     # model structure is loaded $(load_dir)/base_file_name.json
     # weights are loaded from $(load_dir)/base_file_name.h5
@@ -279,15 +410,18 @@ def load_model_json(base_file_name, load_dir=os.path.join('.', 'keras_models'),
         raise IOError(msg)
     return loaded_model
 
+
 def extract_files(arch_path, to_dir='.'):
     """extracts all files from a archive file (zip, tar. tar.bz2 file)
        at arch_path to the 'to_dir' directory """
-    import os, tarfile, zipfile
-    
+    import os
+    import tarfile
+    import zipfile
+
     if os.path.exists(arch_path):
         supported_extensions = ['.zip', '.tar.gz', '.tgz', '.tar.bz2', '.tbz', '.npz']
         arch_exts = [arch_path.endswith(ext) for ext in supported_extensions]
-        
+
         if np.any(arch_exts):
             # if extension is any of our supported extension, we are ok
             opener_triplets = [('zipfile.ZipFile', zipfile.ZipFile, 'r'),
@@ -316,15 +450,18 @@ def extract_files(arch_path, to_dir='.'):
             raise ValueError(f"Unsupported archive file {arch_path} - only one of {supported_extensions} supported")
     else:
         raise ValueError(f"{arch_path} - path does not exist!")
-  
+
 # ----------------------------------------------------------------------------------------
 # custom metrics that can be tracked
 # ----------------------------------------------------------------------------------------
+
+
 def recall(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
+
 
 def precision(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
@@ -332,12 +469,14 @@ def precision(y_true, y_pred):
     precision = true_positives / (predicted_positives + K.epsilon())
     return precision
 
+
 def f1_score(y_true, y_pred):
     prec = precision(y_true, y_pred)
     rec = recall(y_true, y_pred)
-    return 2*((prec*rec)/(prec+rec+K.epsilon()))
+    return 2 * ((prec * rec) / (prec + rec + K.epsilon()))
+
 
 def r2_score(y_true, y_pred):
-    SS_res =  K.sum(K.square(y_true - y_pred)) 
-    SS_tot = K.sum(K.square(y_true - K.mean(y_true))) 
-    return ( 1 - SS_res/(SS_tot + K.epsilon()) )
+    SS_res = K.sum(K.square(y_true - y_pred))
+    SS_tot = K.sum(K.square(y_true - K.mean(y_true)))
+    return (1 - SS_res / (SS_tot + K.epsilon()))
