@@ -9,7 +9,13 @@ Use at your own risk!! I am not responsible if your CPU or GPU gets fried :D
 import warnings
 warnings.filterwarnings('ignore')
 
-import os, sys, random, math
+import os
+import sys
+import random
+import math
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'    # filter out Tensorflow INFO & WARNINGS messages
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,13 +24,13 @@ import seaborn as sns
 # tweaks for libraries
 np.set_printoptions(precision=6, linewidth=1024, suppress=True)
 plt.style.use('seaborn')
-sns.set_style('darkgrid')
-sns.set_context('notebook',font_scale=1.10)
+sns.set(style='darkgrid', context='notebook', font_scale=1.10)
 
 # Keras imports
 import tensorflow as tf
-print(f"Using Tensorflow version: {tf.__version__}")
-USING_TF2 = tf.__version__.startswith("2")
+from tensorflow import keras
+print(f"Using Tensorflow {tf.__version__} - Keras {keras.__version__}")
+USING_TF2 = (int(tf.__version__[0]) >= 2)  # tf.__version__.startswith("2")
 
 # using Tensorflow's implementation of Keras
 from tensorflow.keras.models import Sequential
@@ -49,35 +55,45 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # some globals
 IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS, NUM_CLASSES = 28, 28, 1, 10
-NUM_EPOCHS, BATCH_SIZE, LEARNING_RATE, L2_REG = 25, 64, 0.001, 0.0005
+NUM_EPOCHS, BATCH_SIZE, LEARNING_RATE, L2_REG = 7, 64, 0.001, 0.0005
 MODEL_SAVE_DIR = os.path.join('.', 'model_states')
 
 # --------------------------------------------------------------------------
 # helper functions
 # --------------------------------------------------------------------------
-def display_sample(sample_images, sample_labels, sample_predictions=None, num_rows=5, num_cols=10,
-                   plot_title=None, fig_size=None):
-    
+
+
+def display_sample(
+    sample_images, sample_labels, sample_predictions=None, num_cols=10,
+    plot_title=None, fig_size=None
+):
     import seaborn as sns
-  
+
     """ display a random selection of images & corresponding labels, optionally with predictions
         The display is laid out in a grid of num_rows x num_col cells
         If sample_predictions are provided, then each cell's title displays the prediction (if it matches
         actual)
         or actual/prediction if there is a mismatch
     """
-    assert sample_images.shape[0] == num_rows * num_cols
+    # assert sample_images.shape[0] == num_rows * num_cols
+    num_rows = sample_images.shape[0] // num_cols
+    if (sample_images.shape[0] % num_cols > 0):
+        num_rows += 1
 
     with sns.axes_style("whitegrid"):
         sns.set_context("notebook", font_scale=1.1)
         sns.set_style({"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]})
 
         f, ax = plt.subplots(num_rows, num_cols, figsize=((14, 10) if fig_size is None else fig_size),
-            gridspec_kw={"wspace": 0.05, "hspace": 0.35}, squeeze=True)
+                             gridspec_kw={"wspace": 0.05, "hspace": 0.35}, squeeze=True)
+        
+        indexes = [(r, c) for r in range(num_rows) for c in range(num_cols)]
 
-        for r in range(num_rows):
-            for c in range(num_cols):
-                image_index = r * num_cols + c
+#        for r in range(num_rows):
+#            for c in range(num_cols):
+        for (r, c) in indexes:
+            image_index = r * num_cols + c
+            if image_index < sample_images.shape[0]:
                 ax[r, c].axis("off")
                 # show selected image
                 ax[r, c].imshow(sample_images[image_index], cmap="Greys", interpolation='nearest')
@@ -108,10 +124,11 @@ def display_sample(sample_images, sample_labels, sample_predictions=None, num_ro
         plt.show()
         plt.close()
 
+
 def load_data(debug=True):
     from tensorflow.keras.datasets import mnist
     from tensorflow.keras.utils import to_categorical
-    
+
     """
     loads the MNIST dataset from keras.datasets.mnist package
     pre-processes the image & labels data:
@@ -128,14 +145,14 @@ def load_data(debug=True):
         print(' - X_train.shape = {}, y_train.shape = {}'.format(X_train.shape, y_train.shape))
         print(' - X_test.shape = {}, y_test.shape = {}'.format(X_test.shape, y_test.shape))
 
-    # Per Andrew Ng's advise from his Structured ML course: 
+    # Per Andrew Ng's advise from his Structured ML course:
     # the test & cross-validation datasets must come from the same distribution
-    # So, we are going to split X_test/y_test into cross-val & test datasets 
+    # So, we are going to split X_test/y_test into cross-val & test datasets
     # (we'll use the fact that X_test/y_test is a labelled dataset to our advantage)
-    # We have 10,000 samples in X_test/y_test - we'll assign 8,000 to X_val/y_val & 2,000 
-    # examples to X_test/y_test (test dataset). This also gives us more records in our 
+    # We have 10,000 samples in X_test/y_test - we'll assign 8,000 to X_val/y_val & 2,000
+    # examples to X_test/y_test (test dataset). This also gives us more records in our
     # training set :).
-    
+
     # shuffle the training set (get rid of any implicit sorting)
     indexes = np.arange(X_train.shape[0])
     indexes = np.random.permutation(indexes)
@@ -175,13 +192,13 @@ def load_data(debug=True):
 
     if debug:
         print('After preprocessing:')
-        print(' - X_train.shape = {}, y_train.shape = {}'.format(X_train.shape, y_train.shape))
-        print(' - X_val.shape = {}, y_val.shape = {}'.format(X_val.shape, y_val.shape))
-        print(' - X_test.shape = {}, y_test.shape = {}'.format(X_test.shape, y_test.shape))
-        print(' - test_images.shape = {}, test_labels.shape = {}'.format(test_images.shape,
-            test_labels.shape))
+        print(f' - X_train.shape = {X_train.shape}, y_train.shape = {y_train.shape}')
+        print(f' - X_val.shape = {X_val.shape}, y_val.shape = {y_val.shape}')
+        print(f' - X_test.shape = {X_test.shape}, y_test.shape = {y_test.shape}')
+        print(f' - test_images.shape = {test_images.shape}, test_labels.shape = {test_labels.shape}')
 
     return (X_train, y_train), (X_val, y_val), (X_test, y_test), (test_images, test_labels)
+
 
 def step_lr(epoch):
     global LEARNING_RATE
@@ -189,10 +206,11 @@ def step_lr(epoch):
     initial_lr = LEARNING_RATE
     drop_rate = 0.5
     epochs_drop = 10.0
-    new_lr = initial_lr * math.pow(drop_rate, math.floor((1+epoch)/epochs_drop))
+    new_lr = initial_lr * math.pow(drop_rate, math.floor((1 + epoch) / epochs_drop))
     return new_lr
 
-def build_model_ann(l2_loss_lambda = None):
+
+def build_model_ann(l2_loss_lambda=None):
     l2_reg = None if l2_loss_lambda is None else l2(l2_loss_lambda)
 
     model = Sequential([
@@ -201,71 +219,82 @@ def build_model_ann(l2_loss_lambda = None):
         Dropout(0.10),
         Dense(64, activation='relu', kernel_regularizer=l2_reg),
         Dropout(0.10),
+        # for binary classification activation='sigmoid', for multi-class
+        # classification set activation='softmax'
         Dense(NUM_CLASSES, activation='softmax')
     ])
     opt = Adam(learning_rate=LEARNING_RATE)
-    model.compile(optimizer=opt, loss='sparse_categorical_crossentropy', 
+    model.compile(optimizer=opt, loss='sparse_categorical_crossentropy',
                   metrics=['sparse_categorical_accuracy'])
     return model
 
-def build_model_cnn(l2_loss_lambda = None):
+
+def build_model_cnn(l2_loss_lambda=None):
     l2_reg = None if l2_loss_lambda is None else l2(l2_loss_lambda)
 
     model = Sequential([
-        Conv2D(128, kernel_size=(3,3), padding='SAME', activation='relu', kernel_regularizer=l2_reg,
+        Conv2D(128, kernel_size=(3, 3), padding='SAME', activation='relu', kernel_regularizer=l2_reg,
                input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS)),
         BatchNormalization(),
         MaxPooling2D((2, 2)),
         Dropout(0.20),
-        Conv2D(64, kernel_size=(3,3), padding='SAME', activation='relu', kernel_regularizer=l2_reg),
+        Conv2D(64, kernel_size=(3, 3), padding='SAME', activation='relu', kernel_regularizer=l2_reg),
         BatchNormalization(),
         MaxPooling2D((2, 2)),
         Dropout(0.10),
         Flatten(),
         Dense(512, activation='relu', kernel_regularizer=l2_reg),
         Dropout(0.20),
+        # for binary classification activation='sigmoid', for multi-class
+        # classification set activation='softmax'
         Dense(NUM_CLASSES, activation='softmax')
     ])
     opt = Adam(learning_rate=LEARNING_RATE)
-    model.compile(optimizer=opt, loss='sparse_categorical_crossentropy', 
+    model.compile(optimizer=opt, loss='sparse_categorical_crossentropy',
                   metrics=['sparse_categorical_accuracy'])
     return model
 
-DO_TRAINING = True
+
+DO_TRAINING = False
 DO_PREDICTION = True
 SHOW_SAMPLE = True
 SAMPLE_SIZE = 50
 USE_CNN = True
-MODEL_FILE_NAME = 'kr_mnist_cnn' if USE_CNN else 'kr_mnist_dnn' 
-MODEL_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, MODEL_FILE_NAME) 
+MODEL_FILE_NAME = 'kr_mnist_cnn' if USE_CNN else 'kr_mnist_dnn'
+MODEL_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, MODEL_FILE_NAME)
+
 
 def main():
-    (X_train, y_train), (X_val, y_val), (X_test, y_test), (test_images, test_labels) = \
-        load_data()
-    print(f"X_train.shape = {X_train.shape} - y_train.shape = {y_train.shape} " +
-          f"- X_val.shape = {X_val.shape} - y_val.shape = {y_val.shape} " +
-          f"- X_test.shape = {X_test.shape} - y_test.shape = {y_test.shape}")
+    (X_train, y_train), (X_val, y_val), (X_test, y_test), \
+            (test_images, test_labels) = load_data()
+    print(
+        f"X_train.shape = {X_train.shape} - y_train.shape = {y_train.shape} " +
+        f"- X_val.shape = {X_val.shape} - y_val.shape = {y_val.shape} " +
+        f"- X_test.shape = {X_test.shape} - y_test.shape = {y_test.shape}"
+    )
 
     if SHOW_SAMPLE:
         print(f"Displaying sample of {SAMPLE_SIZE} images...")
         rand_indexes = np.random.randint(0, len(X_test), SAMPLE_SIZE)
         sample_images = test_images[rand_indexes]
         sample_labels = test_labels[rand_indexes]
-        display_sample(sample_images, sample_labels, plot_title='Sample of %d images' % SAMPLE_SIZE)
+        display_sample(sample_images, sample_labels, 
+                plot_title=f'Sample of {SAMPLE_SIZE} images')
 
     if DO_TRAINING:
         if USE_CNN:
             print('Using CNN architecture...')
             model = build_model_cnn(l2_loss_lambda=L2_REG)
-            print(model.summary())
         else:
             print('Using ANN/MLP architecture...')
             model = build_model_ann(l2_loss_lambda=L2_REG)
-            print(model.summary())
+        print(model.summary())
 
         lr_scheduler = LearningRateScheduler(step_lr)
-        hist = model.fit(X_train, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, 
-                 validation_data=(X_val, y_val), callbacks=[lr_scheduler])
+        hist = model.fit(
+            X_train, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE,
+            validation_data=(X_val, y_val), callbacks=[lr_scheduler]
+        )
 
         kru.show_plots(hist.history, metric='sparse_categorical_accuracy')
 
@@ -286,6 +315,14 @@ def main():
         model = kru.load_model(MODEL_SAVE_PATH)
         print(model.summary())
 
+        print(f'\nEvaluating {"CNN" if USE_CNN else "ANN/MLP"} model performance...')
+        loss, acc = model.evaluate(X_train, y_train)
+        print(f'  Training dataset  -> loss: {loss:.4f} - acc: {acc:.4f}')
+        loss, acc = model.evaluate(X_val, y_val)
+        print(f'  Cross-val dataset  -> loss: {loss:.4f} - acc: {acc:.4f}')
+        loss, acc = model.evaluate(X_test, y_test)
+        print(f'  Test dataset  -> loss: {loss:.4f} - acc: {acc:.4f}')
+
         y_pred = model.predict(X_test)
         y_pred = np.argmax(y_pred, axis=1)
         print('Sample labels (50): ', y_test[:50])
@@ -300,8 +337,9 @@ def main():
             sample_predictions = y_pred[rand_indexes]
 
             model_type = 'CNN' if USE_CNN else 'ANN'
-            display_sample(sample_images, sample_labels, sample_predictions,
-                num_rows=5, num_cols=10, plot_title=f'Keras {model_type} - {SAMPLE_SIZE} random predictions')
+            display_sample(
+                sample_images, sample_labels, sample_predictions,
+                plot_title=f'Keras {model_type} - {SAMPLE_SIZE} random predictions')
 
             del model
 
@@ -313,10 +351,11 @@ def main():
 #       - Testing acc -> 98.30
 #     CNN:
 #       - Training acc -> 99.67
-#       - Cross-val acc -> 99.21
+#       - Cross-val acc -> 98.96
 #       - Testing acc -> 99.25
 # CNN is a bit better than the ANN/MLP
 # --------------------------------------------------------------
+
 
 if __name__ == "__main__":
     main()

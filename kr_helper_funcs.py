@@ -174,7 +174,7 @@ def time_taken_as_str(start_time, end_time):
 
 def save_model(model, file_path):
     """ save model structure & weights to path provided """
-    save_dir, save_filename = os.path.splitpath(file_path)
+    save_dir, save_filename = os.path.split(file_path)
 
     if not os.path.exists(save_dir):
         # create directory from file_path, if it does not exist
@@ -275,7 +275,7 @@ def load_model2(base_file_name, save_dir=os.path.join('.', 'model_states'),
 
 def save_model_json(model, file_path):
     """ save the model structure to a JSON file & weights to HD5 """
-    save_dir, save_filename = os.path.splitpath(file_path)
+    save_dir, save_filename = os.path.split(file_path)
     file_name, file_ext = os.path.splitext(save_filename)
 
     if not os.path.exists(save_dir):
@@ -327,7 +327,7 @@ def load_model_json(model, json_file_path, weights_path=None):
 
     from tensorflow.keras.models import model_from_json
 
-    save_dir, save_filename = os.path.splitpath(json_file_path)
+    save_dir, save_filename = os.path.split(json_file_path)
 
     if not os.path.exists(json_file_path):
         raise IOError(f"Cannot load Keras model {file_path} - invalid path!")
