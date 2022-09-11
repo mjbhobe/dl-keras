@@ -26,20 +26,52 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 
 USING_TF2 = (tf.__version__.startswith('2'))
-seed = 123
+# seed = 123
 
-os.environ['PYTHONHASHSEED'] = str(seed)
-random.seed(seed)
-np.random.seed(seed)
+# os.environ['PYTHONHASHSEED'] = str(seed)
+# random.seed(seed)
+# np.random.seed(seed)
 
-if USING_TF2:
-    tf.random.set_seed(seed)
-else:
-    tf.compat.v1.set_random_seed(seed)
+# if USING_TF2:
+#     tf.random.set_seed(seed)
+# else:
+#     tf.compat.v1.set_random_seed(seed)
 
 # -----------------------------------------------------------------------------------------------
 # Generic helper functions
 # -----------------------------------------------------------------------------------------------
+KRU_FAV_SEED = 41
+
+__version__ = "1.5.0"
+__author__ = "Manish Bhobe"
+
+
+def seed_all(seed=None):
+    # to ensure that you get consistent results across runs & machines
+    """seed all random number generators to get consistent results
+       across multiple runs ON SAME MACHINE - you may get different results
+       on a different machine (architecture) & that is to be expected
+
+       @params:
+            - seed (optional): seed value that you choose to see everything. Can be None 
+              (default value). If None, the code chooses a random uint between np.uint32.min
+              & np.unit32.max
+        @returns:
+            - if parameter seed=None, then function returns the randomly chosen seed, else it
+              returns value of the parameter passed to the function
+    """
+    if seed is None:
+        # pick a random uint32 seed
+        seed = random.randint(np.iinfo(np.uint32).min, np.iinfo(np.uint32).max)
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+
+    if USING_TF2:
+        tf.random.set_seed(seed)
+    else:
+        tf.compat.v1.set_random_seed(seed)
+    return seed
 
 
 def progbar_msg(curr_tick, max_tick, head_msg, tail_msg, final=False):
