@@ -10,21 +10,22 @@ import warnings
 warnings.filterwarnings('ignore')
 
 import os
+
+# reduce warnings overload from Tensorflow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 import sys
 import random
 import math
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'    # filter out Tensorflow INFO & WARNINGS messages
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# tweaks for libraries
-np.set_printoptions(precision=6, linewidth=1024, suppress=True)
-plt.style.use('seaborn')
-sns.set(style='darkgrid', context='notebook', font_scale=1.10)
+# # tweaks for libraries
+# np.set_printoptions(precision=6, linewidth=1024, suppress=True)
+# plt.style.use('seaborn')
+# sns.set(style='darkgrid', context='notebook', font_scale=1.10)
 
 # Keras imports
 import tensorflow as tf
@@ -41,17 +42,20 @@ from tensorflow.keras.callbacks import LearningRateScheduler
 # my helper functions for Keras
 import kr_helper_funcs as kru
 
-# to ensure that you get consistent results across runs & machines
-seed = 123
-random.seed(seed)
-os.environ['PYTHONHASHSEED'] = str(seed)
-np.random.seed(seed)
-if USING_TF2:
-    tf.random.set_seed(seed)
-else:
-    tf.compat.v1.set_random_seed(seed)
-# log only error from Tensorflow
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+# # to ensure that you get consistent results across runs & machines
+# seed = 123
+# random.seed(seed)
+# os.environ['PYTHONHASHSEED'] = str(seed)
+# np.random.seed(seed)
+# if USING_TF2:
+#     tf.random.set_seed(seed)
+# else:
+#     tf.compat.v1.set_random_seed(seed)
+# # log only error from Tensorflow
+# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
+seed = kru.seed_all()
+kru.setupModules()
 
 # some globals
 IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS, NUM_CLASSES = 28, 28, 1, 10
@@ -255,12 +259,12 @@ def build_model_cnn(l2_loss_lambda=None):
     return model
 
 
-DO_TRAINING = False
+DO_TRAINING = True
 DO_PREDICTION = True
 SHOW_SAMPLE = True
 SAMPLE_SIZE = 50
 USE_CNN = True
-MODEL_FILE_NAME = 'kr_mnist_cnn' if USE_CNN else 'kr_mnist_dnn'
+MODEL_FILE_NAME = 'kr_mnist_cnn.h5' if USE_CNN else 'kr_mnist_dnn.h5'
 MODEL_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, MODEL_FILE_NAME)
 
 

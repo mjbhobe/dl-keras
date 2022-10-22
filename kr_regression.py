@@ -10,6 +10,8 @@ import warnings
 warnings.filterwarnings('ignore')
 
 import os
+# reduce Tensorflow warnings overload
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import sys
 import random
 import math
@@ -19,11 +21,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import r2_score
 
-# tweaks for libraries
-np.set_printoptions(precision=6, linewidth=1024, suppress=True)
-plt.style.use('seaborn')
-sns.set_style('darkgrid')
-sns.set_context('notebook', font_scale=1.10)
+# # tweaks for libraries
+# np.set_printoptions(precision=6, linewidth=1024, suppress=True)
+# plt.style.use('seaborn')
+# sns.set_style('darkgrid')
+# sns.set_context('notebook', font_scale=1.10)
 
 # Tensorflow & Keras imports
 import tensorflow as tf
@@ -37,19 +39,19 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 
-# to ensure that you get consistent results across runs & machines
-SEED = 123
-random.seed(SEED)
-os.environ['PYTHONHASHSEED'] = str(SEED)
-np.random.seed(SEED)
-tf.random.set_seed(SEED)
-# log only error from Tensorflow
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-# reduce Tensorflow warnings overload
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# # to ensure that you get consistent results across runs & machines
+# SEED = 123
+# random.seed(SEED)
+# os.environ['PYTHONHASHSEED'] = str(SEED)
+# np.random.seed(SEED)
+# tf.random.set_seed(SEED)
+# # log only error from Tensorflow
+# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # my helper functions for Keras
 import kr_helper_funcs as kru
+SEED = kru.seed_all()
+kru.setupSciLabModules()
 
 
 def generate_temp_data(m, c, min_val=1.0, max_val=50.0, numelems=100, std=10.0):
@@ -109,7 +111,8 @@ def main():
     plt.plot(X, y_pred, lw=2, c='firebrick')
     Mp, Cp = model.layers[0].get_weights()[0][0], \
         model.layers[0].get_weights()[1][0]
-    plt.title(f'Prediction -> $y = {Mp:.2f} * X + {Cp:.2f}$')
+
+    plt.title('Prediction -> $y = %.3f * X + %.3f$' % (Mp, Cp))
     plt.show()
 
 

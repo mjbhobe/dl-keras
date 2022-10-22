@@ -11,17 +11,23 @@ Use at your own risk!! I am not responsible if your CPU or GPU gets fried :D
 import warnings
 warnings.filterwarnings('ignore')
 
-import os, sys, random, math
+import os
+import sys
+import random
+import math
+# reduce warnings overload from Tensorflow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 # tweaks for libraries
-np.set_printoptions(precision=6, linewidth=1024, suppress=True)
-plt.style.use('seaborn')
-sns.set_style('darkgrid')
-sns.set_context('notebook',font_scale=1.10)
+# np.set_printoptions(precision=6, linewidth=1024, suppress=True)
+# plt.style.use('seaborn')
+# sns.set_style('darkgrid')
+# sns.set_context('notebook',font_scale=1.10)
 
 # Keras imports
 import tensorflow as tf
@@ -42,17 +48,20 @@ from tensorflow.keras.callbacks import LearningRateScheduler
 # my helper functions for Keras
 import kr_helper_funcs as kru
 
-# to ensure that you get consistent results across runs & machines
-seed = 123
-random.seed(seed)
-os.environ['PYTHONHASHSEED'] = str(seed)
-np.random.seed(seed)
-if USING_TF2:
-    tf.random.set_seed(seed)
-else:
-    tf.compat.v1.set_random_seed(seed)
-# log only error from Tensorflow
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+seed = kru.seed_all()
+kru.setupModeules()
+
+# # to ensure that you get consistent results across runs & machines
+# seed = 123
+# random.seed(seed)
+# os.environ['PYTHONHASHSEED'] = str(seed)
+# np.random.seed(seed)
+# if USING_TF2:
+#     tf.random.set_seed(seed)
+# else:
+#     tf.compat.v1.set_random_seed(seed)
+# # log only error from Tensorflow
+# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # some globals
 IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS, NUM_CLASSES = 28, 28, 1, 10
@@ -62,6 +71,8 @@ MODEL_SAVE_DIR = os.path.join('.', 'model_states')
 # --------------------------------------------------------------------------
 # helper functions
 # --------------------------------------------------------------------------
+
+
 def display_sample(sample_images, sample_labels, sample_predictions=None, num_rows=5, num_cols=10,
                    plot_title=None, fig_size=None):
 
@@ -79,7 +90,7 @@ def display_sample(sample_images, sample_labels, sample_predictions=None, num_ro
         sns.set_style({"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]})
 
         f, ax = plt.subplots(num_rows, num_cols, figsize=((14, 10) if fig_size is None else fig_size),
-            gridspec_kw={"wspace": 0.05, "hspace": 0.35}, squeeze=True)
+                             gridspec_kw={"wspace": 0.05, "hspace": 0.35}, squeeze=True)
 
         for r in range(num_rows):
             for c in range(num_cols):
@@ -89,7 +100,7 @@ def display_sample(sample_images, sample_labels, sample_predictions=None, num_ro
                 # NOTE: matplotlib expects images to be of shape (H,W) for grayscale images
                 plt_image = sample_images[image_index]
                 if plt_image.ndim > 2:
-                    plt_image = np.squeeze(plt_image) # drop the channels
+                    plt_image = np.squeeze(plt_image)  # drop the channels
 
                 ax[r, c].imshow(plt_image, cmap="Greys", interpolation='nearest')
 
@@ -118,6 +129,7 @@ def display_sample(sample_images, sample_labels, sample_predictions=None, num_ro
 
         plt.show()
         plt.close()
+
 
 def load_data(debug=True):
     from tensorflow.keras.datasets import mnist
@@ -174,16 +186,18 @@ def load_data(debug=True):
 
     return (X_train, y_train), (X_val, y_val), (X_test, y_test)
 
+
 def step_lr(epoch):
     global LEARNING_RATE
 
     initial_lr = LEARNING_RATE
     drop_rate = 0.5
     epochs_drop = 10.0
-    new_lr = initial_lr * math.pow(drop_rate, math.floor((1+epoch)/epochs_drop))
+    new_lr = initial_lr * math.pow(drop_rate, math.floor((1 + epoch) / epochs_drop))
     return new_lr
 
-def build_model_ann(l2_loss_lambda = None):
+
+def build_model_ann(l2_loss_lambda=None):
     # build the model using functional API + keras' new experimental
     # Rescaling layer, which pre=processes images in the model itself
 
@@ -205,14 +219,15 @@ def build_model_ann(l2_loss_lambda = None):
     x = Dropout(0.10)(x)
     out = Dense(NUM_CLASSES, activation='softmax')(x)
 
-    model = Model(inputs=inputs, outputs=out) 
+    model = Model(inputs=inputs, outputs=out)
 
     opt = Adam(learning_rate=LEARNING_RATE)
     model.compile(optimizer=opt, loss='sparse_categorical_crossentropy',
                   metrics=['sparse_categorical_accuracy'])
     return model
 
-def build_model_cnn(l2_loss_lambda = None):
+
+def build_model_cnn(l2_loss_lambda=None):
     l2_reg = None if l2_loss_lambda is None else l2(l2_loss_lambda)
 
     inputs = Input(shape=(IMAGE_HEIGHT, IMAGE_WIDTH))
@@ -222,10 +237,10 @@ def build_model_cnn(l2_loss_lambda = None):
     x = Reshape((IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS))(x)
 
     # feature selection layers (Conv2D)
-    x = Conv2D(128, kernel_size=(3,3), padding='SAME', activation='relu', kernel_regularizer=l2_reg)(x)
+    x = Conv2D(128, kernel_size=(3, 3), padding='SAME', activation='relu', kernel_regularizer=l2_reg)(x)
     x = MaxPooling2D((2, 2))(x)
     x = Dropout(0.20)(x)
-    x = Conv2D(64, kernel_size=(3,3), padding='SAME', activation='relu', kernel_regularizer=l2_reg)(x)
+    x = Conv2D(64, kernel_size=(3, 3), padding='SAME', activation='relu', kernel_regularizer=l2_reg)(x)
     x = MaxPooling2D((2, 2))(x)
     x = Dropout(0.10)(x)
     x = Flatten()(x)
@@ -241,6 +256,7 @@ def build_model_cnn(l2_loss_lambda = None):
                   metrics=['sparse_categorical_accuracy'])
     return model
 
+
 DO_TRAINING = True
 DO_PREDICTION = True
 SHOW_SAMPLE = True
@@ -248,6 +264,7 @@ SAMPLE_SIZE = 50
 USE_CNN = True
 MODEL_FILE_NAME = 'kr_mnist_cnn3' if USE_CNN else 'kr_mnist_dnn3'
 MODEL_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, MODEL_FILE_NAME)
+
 
 def main():
     (X_train, y_train), (X_val, y_val), (X_test, y_test) = load_data()
@@ -274,7 +291,7 @@ def main():
 
         lr_scheduler = LearningRateScheduler(step_lr)
         hist = model.fit(X_train, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE,
-                 validation_data=(X_val, y_val), callbacks=[lr_scheduler])
+                         validation_data=(X_val, y_val), callbacks=[lr_scheduler])
         kru.show_plots(hist.history, metric='sparse_categorical_accuracy')
 
         # evaluate model performance
@@ -308,7 +325,7 @@ def main():
 
             model_type = 'CNN' if USE_CNN else 'ANN'
             display_sample(sample_images, sample_labels, sample_predictions,
-                num_rows=5, num_cols=10, plot_title=f'Keras {model_type} - {SAMPLE_SIZE} random predictions')
+                           num_rows=5, num_cols=10, plot_title=f'Keras {model_type} - {SAMPLE_SIZE} random predictions')
 
             del model
 
@@ -324,6 +341,7 @@ def main():
 #       - Testing acc -> 99.15
 # CNN is a bit better than the ANN/MLP
 # --------------------------------------------------------------
+
 
 if __name__ == "__main__":
     main()

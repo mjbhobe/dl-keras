@@ -7,22 +7,30 @@ This code is meant for education purposes only & is not intended for commercial/
 Use at your own risk!! I am not responsible if your CPU or GPU gets fried :D
 """
 import warnings
+
 warnings.filterwarnings('ignore')
 
-import os, sys, random
+import sys
+import os
+import random
+
+# reduce warnings overload from Tensorflow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# tweaks for libraries
-np.set_printoptions(precision=6, linewidth=1024, suppress=True)
-plt.style.use('seaborn')
-sns.set_style('darkgrid')
-sns.set_context('notebook',font_scale=1.10)
+# # tweaks for libraries
+# np.set_printoptions(precision=6, linewidth=1024, suppress=True)
+# plt.style.use('seaborn')
+# sns.set_style('darkgrid')
+# sns.set_context('notebook',font_scale=1.10)
 
 # Keras imports
 import tensorflow as tf
+
 print(f"Using Tensorflow version: {tf.__version__}")
 USING_TF2 = tf.__version__.startswith("2")
 
@@ -34,17 +42,22 @@ from tensorflow.keras.regularizers import l2
 # my helper functions for Keras
 import kr_helper_funcs as kru
 
-# to ensure that you get consistent results across runs & machines
-seed = 123
-random.seed(seed)
-os.environ['PYTHONHASHSEED'] = str(seed)
-np.random.seed(seed)
-if USING_TF2:
-    tf.random.set_seed(seed)
-else:
-    tf.compat.v1.set_random_seed(seed)
-# log only error from Tensorflow
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+# # to ensure that you get consistent results across runs & machines
+# seed = 123
+# random.seed(seed)
+# os.environ['PYTHONHASHSEED'] = str(seed)
+# np.random.seed(seed)
+# if USING_TF2:
+#     tf.random.set_seed(seed)
+# else:
+#     tf.compat.v1.set_random_seed(seed)
+# # log only error from Tensorflow
+# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
+seed = kru.seed_all()
+# tweaks for Numpy, Pandas, Matplotlib & Seaborn
+kru.setupSciLabModules()
+
 
 def load_data(val_split=0.20, test_split=0.20):
     from sklearn.datasets import load_iris
@@ -58,7 +71,7 @@ def load_data(val_split=0.20, test_split=0.20):
     # split into train/test sets
     X_train, X_test, y_train, y_test = \
         train_test_split(X, y, test_size=test_split, random_state=seed)
-    
+
     # standard scale data
     ss = StandardScaler()
     X_train = ss.fit_transform(X_train)
@@ -77,7 +90,8 @@ def load_data(val_split=0.20, test_split=0.20):
 
     return (X_train, y_train), (X_val, y_val), (X_test, y_test)
 
-MODEL_SAVE_NAME = 'kr_iris_ann'
+
+MODEL_SAVE_NAME = '.\model_states\kr_iris_ann.h5'
 
 # Hyper-parameters
 NUM_FEATURES = 4
@@ -87,7 +101,8 @@ BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 L2_REG = 0.005
 
-        # model = WBCNet(NUM_FEATURES, 30, 30, NUM_CLASSES)
+
+# model = WBCNet(NUM_FEATURES, 30, 30, NUM_CLASSES)
 def build_model(inp_size, hidden1, hidden2, num_classes, l2_lambda=None):
     l2_reg = None if l2_lambda is None else l2(l2_lambda)
 
@@ -96,16 +111,17 @@ def build_model(inp_size, hidden1, hidden2, num_classes, l2_lambda=None):
         Dense(hidden2, activation='relu', kernel_regularizer=l2_reg),
         Dense(num_classes, activation='softmax')
     ])
-    #sgd = SGD(learning_rate=LEARNING_RATE, decay=0.005, nesterov=True, momentum=0.9)
+    # sgd = SGD(learning_rate=LEARNING_RATE, decay=0.005, nesterov=True, momentum=0.9)
     adam = Adam(learning_rate=LEARNING_RATE, decay=0.005)
     model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['acc'])
     return model
 
+
 DO_TRAINING = True
 DO_PREDICTION = True
 
-def main():
 
+def main():
     (X_train, y_train), (X_val, y_val), (X_test, y_test) = load_data()
     print(f"X_train.shape = {X_train.shape} - y_train.shape = {y_train.shape} " +
           f"- X_val.shape = {X_val.shape} - y_val.shape = {y_val.shape} " +
@@ -115,7 +131,7 @@ def main():
     if DO_TRAINING:
         model = build_model(NUM_FEATURES, 32, 32, NUM_CLASSES, L2_REG)
         print(model.summary())
-        
+
         print('Training model...')
         hist = model.fit(X_train, y_train, validation_split=0.20, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE)
         kru.show_plots(hist.history, metric='acc')
@@ -136,13 +152,14 @@ def main():
         print('\nRunning predictions...')
         model = kru.load_model(MODEL_SAVE_NAME)
         print(model.summary())
-        
+
         y_pred = np.argmax(np.round(model.predict(X_test)), axis=1)
         y_true = np.argmax(y_test, axis=1)
         # display output
         print('Sample labels: ', y_true)
         print('Sample predictions: ', y_pred)
         print('We got %d/%d correct!' % ((y_true == y_pred).sum(), len(y_true)))
+
 
 # --------------------------------------------------
 # Results:
@@ -153,8 +170,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-

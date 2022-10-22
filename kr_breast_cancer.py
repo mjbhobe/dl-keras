@@ -11,6 +11,10 @@ warnings.filterwarnings('ignore')
 
 import sys
 import os
+
+# reduce warnings overload from Tensorflow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import random
 import numpy as np
 import pandas as pd
@@ -27,30 +31,34 @@ from tensorflow.keras.regularizers import l2
 # my helper functions for Keras
 import kr_helper_funcs as kru
 
-# tweaks for libraries
-np.set_printoptions(precision=6, linewidth=1024, suppress=True)
-plt.style.use('seaborn')
-sns.set_style('darkgrid')
-sns.set_context('notebook', font_scale=1.10)
+seed = kru.seed_all()
+# tweaks for Numpy, Pandas, Matplotlib & seaborn
+kru.setupSciLabModules()
+
+# # tweaks for libraries
+# np.set_printoptions(precision=6, linewidth=1024, suppress=True)
+# plt.style.use('seaborn')
+# sns.set_style('darkgrid')
+# sns.set_context('notebook', font_scale=1.10)
 
 # Keras imports
 print(f"Using Tensorflow version: {tf.__version__}. " +
       f"GPU {'is available :)' if tf.test.is_gpu_available() else 'is not available :('}")
 USING_TF2 = tf.__version__.startswith("2")
 
-# to ensure that you get consistent results across runs & machines
-seed = 123
-random.seed(seed)
-os.environ['PYTHONHASHSEED'] = str(seed)
-np.random.seed(seed)
-if USING_TF2:
-    tf.random.set_seed(seed)
-else:
-    tf.compat.v1.set_random_seed(seed)
-# log only error from Tensorflow
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-# reduce warnings overload from Tensorflow
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# # to ensure that you get consistent results across runs & machines
+# seed = 123
+# random.seed(seed)
+# os.environ['PYTHONHASHSEED'] = str(seed)
+# np.random.seed(seed)
+# if USING_TF2:
+#     tf.random.set_seed(seed)
+# else:
+#     tf.compat.v1.set_random_seed(seed)
+# # log only error from Tensorflow
+# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+# # reduce warnings overload from Tensorflow
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 data_file_path = './data/wisconsin_breast_cancer.csv'
 
@@ -104,7 +112,7 @@ def load_data(test_split=0.20):
     return (X_train, y_train), (X_test, y_test)
 
 
-MODEL_SAVE_NAME = 'kr_wbc_ann'
+MODEL_SAVE_NAME = '.\model_states\kr_wbc_ann.h5'
 
 # Hyper-parameters
 NUM_FEATURES = 30

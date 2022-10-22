@@ -10,16 +10,19 @@ import warnings
 warnings.filterwarnings('ignore')
 
 import os, sys, random
+# reduce Tensorflow warnings overload
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# tweaks for libraries
-np.set_printoptions(precision=6, linewidth=1024, suppress=True)
-plt.style.use('seaborn')
-sns.set_style('darkgrid')
-sns.set_context('notebook',font_scale=1.10)
+# # tweaks for libraries
+# np.set_printoptions(precision=6, linewidth=1024, suppress=True)
+# plt.style.use('seaborn')
+# sns.set_style('darkgrid')
+# sns.set_context('notebook',font_scale=1.10)
 
 # Tensorflow & Keras imports
 import tensorflow as tf
@@ -37,17 +40,20 @@ import kr_helper_funcs as kru
 
 # to ensure that you get consistent results across runs & machines
 # @see: https://discuss.pytorch.org/t/reproducibility-over-different-machines/63047
-seed = 123
-random.seed(seed)
-os.environ['PYTHONHASHSEED'] = str(seed)
-np.random.seed(seed)
-if USING_TF2:
-    tf.random.set_seed(seed)
-else:
-    tf.compat.v1.set_random_seed(seed)
+# seed = 123
+# random.seed(seed)
+# os.environ['PYTHONHASHSEED'] = str(seed)
+# np.random.seed(seed)
+# if USING_TF2:
+#     tf.random.set_seed(seed)
+# else:
+#     tf.compat.v1.set_random_seed(seed)
+#
+# # log only error from Tensorflow
+# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
-# log only error from Tensorflow
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+seed = kru.seed_all()
+kru.setupModules()
 
 def load_data(val_split=0.20, test_split=0.10):
     from sklearn.datasets import load_wine
@@ -107,9 +113,9 @@ def build_model(inp_size, hidden1, num_classes):
 #         return x
 
 DO_TRAINING = True
-DO_TESTING = False
-DO_PREDICTION = False
-MODEL_SAVE_NAME = 'kr_wine_ann'
+DO_TESTING = True
+DO_PREDICTION = True
+MODEL_SAVE_NAME = '.\model_states\kr_wine_ann.h5'
 
 def main():
 

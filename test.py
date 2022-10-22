@@ -1,8 +1,7 @@
-import sys, os, random
+import sys
+import os
+import random
+import kr_helper_funcs as kru
 
-indexes = [(i, j) for i in range(5) for j in range(4)]
-
-for index in indexes:
-    print(index, end=' ')
-
-print("Done!")
+SEED = kru.seed_all()
+kru.setupSciLabModules()

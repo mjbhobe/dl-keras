@@ -13,8 +13,14 @@ Usage:
 """
 
 # imports & tweaks
+import warnings
+warnings.filterwarnings('ignore')
+
 import sys
 import os
+# reduce warnings overload from Tensorflow (errors & fatals only!)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 import random
 import numpy as np
 import pandas as pd
@@ -71,7 +77,37 @@ def seed_all(seed=None):
         tf.random.set_seed(seed)
     else:
         tf.compat.v1.set_random_seed(seed)
+    # log only error from Tensorflow
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     return seed
+
+
+def setupSciLabModules():
+    """
+    setup libraries such as Numpy, Pandas, seaborn etc.
+    """
+    try:
+        def float_formatter(x): return '%.4f' % x
+        np.set_printoptions(formatter={'float_kind': float_formatter})
+        np.set_printoptions(threshold=np.inf, suppress=True, precision=4, linewidth=1024)
+    except NameError:
+        # Numpy was not imported, so skip Numpy tweaks
+        print("Skipping Numpy tweaks", flush=True)
+        pass
+
+    try:
+        plt.style.use('seaborn')
+    except NameError:
+        # Matplotlib was not imported, so skip Matplotlib tweaks
+        print("Skipping Matplotlib tweaks", flush=True)
+        pass
+
+    try:
+        sns.set(context='notebook', style='whitegrid', font_scale=1.2)
+    except NameError:
+        # Seaborn was not imported, so skip Matplotlib tweaks
+        print("Skipping Seaborn tweaks", flush=True)
+        pass
 
 
 def progbar_msg(curr_tick, max_tick, head_msg, tail_msg, final=False):
@@ -96,7 +132,6 @@ def progbar_msg(curr_tick, max_tick, head_msg, tail_msg, final=False):
 
 
 def show_plots(history, metric=None, plot_title=None, fig_size=None):
-
     import seaborn as sns
 
     """ Useful function to view plot of loss values & 'metric' across the various epochs
@@ -135,7 +170,7 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
         # plot the losses
         losses_df = df.loc[:, loss_metrics]
         losses_df.plot(ax=axs)
-        #ax[0].set_ylim(0.0, 1.0)
+        # ax[0].set_ylim(0.0, 1.0)
         axs.grid(True)
         losses_title = 'Training \'loss\' vs Epochs' if len(
             loss_metrics) == 1 else 'Training & Validation \'loss\' vs Epochs'
@@ -269,7 +304,7 @@ def save_model2(model, base_file_name, save_dir=os.path.join('.', 'model_states'
 
         model_save_path = base_file_name
 
-    #model_save_path = os.path.join(save_dir, base_file_name)
+    # model_save_path = os.path.join(save_dir, base_file_name)
     model.save(model_save_path)
     print('Saved model to file %s' % model_save_path)
 
@@ -482,6 +517,7 @@ def extract_files(arch_path, to_dir='.'):
             raise ValueError(f"Unsupported archive file {arch_path} - only one of {supported_extensions} supported")
     else:
         raise ValueError(f"{arch_path} - path does not exist!")
+
 
 # ----------------------------------------------------------------------------------------
 # custom metrics that can be tracked
