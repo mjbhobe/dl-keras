@@ -78,14 +78,14 @@ def build_model():
 
 def main():
     # generate data with noise
-    M, C = 1.8, 32.0
-    X, y = generate_temp_data(M, C, numelems=500, std=25)
+    M, C, S = 1.8, 32.0, 25
+    X, y = generate_temp_data(M, C, numelems=2500, std=S)
     print(f"X.shape = {X.shape}, y.shape = {y.shape}")
 
     # display plot of generated data
     plt.figure(figsize=(8, 6))
     plt.scatter(X, y, s=40, c='steelblue')
-    plt.title(f'Original Data -> $y = {M:.2f} * X + {C:.2f}$')
+    plt.title(f'Original Data -> $y = {M:.2f} * X + {C:.2f} (with std:{S})$')
     plt.show()
 
     model = build_model()
@@ -96,7 +96,7 @@ def main():
 
     # train the model
     print('Training....', flush=True)
-    hist = model.fit(X, y, epochs=5000, batch_size=32, verbose=2)
+    hist = model.fit(X, y, epochs=5000, batch_size=256, verbose=2)
     kru.show_plots(hist.history, metric='r2_score',
                    plot_title="Performance Metrics")
 

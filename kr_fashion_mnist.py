@@ -1,49 +1,29 @@
-<<<<<<< HEAD
 #!/usr/bin/env python
 """ Fashion MNIST multiclass classification using Tensorflow 2.0 & Keras """
 import sys
 import os
-import random
-# import pathlib
-# import json
-# import glob
-# import tarfile
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.datasets import mnist
 from tensorflow.keras.layers import (BatchNormalization, Conv2D, Dense, Dropout, Flatten,
                                      Input, MaxPooling2D, ELU, ReLU, Softmax)
 from tensorflow.keras.models import load_model
-from tensorflow.keras.models import model_from_json
-from tensorflow.keras.utils import plot_model
-from tensorflow.python.keras.metrics import TrueNegatives
 import kr_helper_funcs as kru
 
-=======
 import random
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras.datasets import fashion_mnist
 import matplotlib.pyplot as plt
-import seaborn as sns
 import kr_helper_funcs as kru
 
 plt.style.use('seaborn')
 
->>>>>>> bbc974c7328d49125b62578f259511f7286a8dfc
 SEED = 42
 random.seed(SEED)
 np.random.seed(SEED)
 tf.random.set_seed(SEED)
 
-<<<<<<< HEAD
 print(f"Using Tensorflow {tf.__version__}")
 
 EPOCHS, BATCH_SIZE, BUFFER_SIZE = 25, 64, 512
@@ -61,16 +41,17 @@ def load_fashion_data():
     X_val = X_val.astype('float32') / 255.0
     X_test = X_test.astype('float32') / 255.0
     # Reshape grayscale to include channel dimension.
+
     X_train = np.expand_dims(X_train, axis=3)
     X_val = np.expand_dims(X_val, axis=3)
     X_test = np.expand_dims(X_test, axis=3)
+
     # Process labels.
     label_binarizer = LabelBinarizer()
     y_train = label_binarizer.fit_transform(y_train)
     y_val = label_binarizer.fit_transform(y_val)
     y_test = label_binarizer.fit_transform(y_test)
 
-    X_train, y_train, X_val, y_val, X_test, y_test = load_fashion_data()
     print(f"X_train.shape = {X_train.shape} - y_train.shape = {y_train.shape}\n"
           f"X_val.shape = {X_val.shape} - y_val.shape = {y_val.shape}\n"
           f"X_test.shape = {X_test.shape} - y_test.shape = {y_test.shape} ")
@@ -112,8 +93,8 @@ def build_model():
     return model
 
 
-MODEL_SAVE_PATH = os.path.join('./model_states', 'kr_fashion_mnist.hdf5')
-DO_TRAINING = False
+MODEL_SAVE_PATH = os.path.join('./model_states', 'kr_fashion_mnist.h5')
+DO_TRAINING = True
 DO_PREDICTIONS = False
 
 
@@ -163,7 +144,9 @@ def main():
 
 if __name__ == '__main__':
     main()
-=======
+
+
+"""
 (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
 print(f"X_train.shape: {X_train.shape} - y_train.shape: {y_train.shape} - "
       f"X_test.shape: {X_test.shape} - y_test.shape: {y_test.shape}")
@@ -195,4 +178,4 @@ print(f"Testing data  -> loss: {loss:.3f} - acc: {acc:.3f}")
 kru.save_model(model, 'kr_fashion2')
 del model
 
->>>>>>> bbc974c7328d49125b62578f259511f7286a8dfc
+"""
