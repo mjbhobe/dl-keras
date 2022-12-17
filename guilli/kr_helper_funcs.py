@@ -97,13 +97,17 @@ def setupSciLabModules():
 
     try:
         # @see: https://towardsdatascience.com/8-commonly-used-pandas-display-options-you-should-know-a832365efa95
-        pd.set_option('display_max_rows', 100)      # display upto these many rows before truncating display
-        pd.set_option('display_max_columns', 50)    # display these many columns before truncating
+        pd.set_option('display.max_rows', 100)      # display upto these many rows before truncating display
+        pd.set_option('display.max_columns', 50)    # display these many columns before truncating
         pd.set_option('display.max_colwidth', 60)   # max width of each column before truncating
         #pd.set_option('display.precision', 4)       # how many floating point numbers after . (setting same as Numpy)
         pd.set_option('display.float_format', '{:,.4f}'.format)    # use comma separator when displaying numbers
         pd.set_option('display.max_info_columns', 200)
         pd.set_option('display.max_info_rows', 10)
+    except NameError:
+        # pandas was not installed
+        print("Skipping pandas tweaks", flush=True)
+        pass
 
     try:
         plt.style.use('seaborn')

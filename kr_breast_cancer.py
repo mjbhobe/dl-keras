@@ -11,6 +11,7 @@ warnings.filterwarnings('ignore')
 
 import sys
 import os
+import pathlib
 
 # reduce warnings overload from Tensorflow
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -60,7 +61,12 @@ USING_TF2 = tf.__version__.startswith("2")
 # # reduce warnings overload from Tensorflow
 # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-data_file_path = './data/wisconsin_breast_cancer.csv'
+data_file_path = pathlib.Path(".")
+print(f"Current path {data_file_path}")
+data_file_path = data_file_path / "data" / "wisconsin_breast_cancer.csv"
+print(f"Data file path is: {data_file_path.absolute()}", flush=True)
+assert os.path.exists(data_file_path.absolute()), f"{data_file_path.absolute()} - data file does not exist!"
+#data_file_path = './data/wisconsin_breast_cancer.csv'
 
 
 def download_data_file():
@@ -85,11 +91,10 @@ def load_data(test_split=0.20):
     from sklearn.model_selection import train_test_split
     from sklearn.preprocessing import StandardScaler
 
-    if not os.path.exists(data_file_path):
+    if not os.path.exists(data_file_path.absolute()):
         download_data_file()
 
-    assert os.path.exists(
-        data_file_path), "%s - unable to open file!" % data_file_path
+    assert os.path.exists(data_file_path.absolute()), "%s - unable to open file!" % data_file_path
 
     wis_df = pd.read_csv(data_file_path, index_col=0)
 
