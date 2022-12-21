@@ -15,15 +15,14 @@ import os
 # set to 0 (log ALL messages - default)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # supress excessive Tensorflow output
 
-import pathlib, random, shutil
+import pathlib, shutil
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 import tensorflow as tf
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import (
-    Input, Rescaling, Conv2D, BatchNormalization, Activation, add, Dropout,
+    Input, Rescaling, Conv2D, BatchNormalization, Activation, add, Dropout, Flatten,
     MaxPooling2D, Dense, SeparableConv2D, GlobalAveragePooling2D, RandomFlip, RandomRotation)
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -55,6 +54,7 @@ def cleanImages():
     total_images, num_processed, num_discarded = 0, 0, 0
     cat_images_processed, cat_images_discarded = 0, 0
     dog_images_processed, dog_images_discarded = 0, 0
+    bad_images_folder = pathlib.Path(IMAGES_FOLDER).parent.absolute() / "bad_images"
 
     for folder_name in ("Cat", "Dog"):
         folder_path = os.path.join(IMAGES_FOLDER, folder_name)
@@ -70,6 +70,12 @@ def cleanImages():
                 f = open(image_path, "rb")
                 # check if first 10 bytes contain text "JFIF"
                 is_jfif = tf.compat.as_bytes("JFIF") in f.peek(10)
+            except IOError as err:
+                print(f"Error reading {image_path}: {err}")
+                # move the image to bad_images path
+                bad_image_path = os.path.join(bad_images_folder, image_name)
+                print(f"    Moved corrupt image {image_path} -> {bad_image_path}")
+                shutil.move(image_path, bad_image_path)
             finally:
                 f.close()
 
@@ -82,9 +88,9 @@ def cleanImages():
                     dog_images_discarded += 1
 
                 print(f"\n      Bad file - discarding {image_path}", flush = True)
-                discard_path = os.path.join(IMAGES_FOLDER, "discarded", image_name)
+                discard_path = os.path.join(bad_images_folder, image_name)
                 shutil.move(image_path, discard_path)
-                print(f"      Moved {image_name} -> {discard_path}", flush = True)
+                print(f"      Moved discarded {image_name} -> {discard_path}", flush = True)
             else:
                 num_processed += 1
 
@@ -92,6 +98,7 @@ def cleanImages():
                     cat_images_processed += 1
                 else:
                     dog_images_processed += 1
+        print("")
 
     # display final summary
     print(f"\nCleanup completed: {total_images} images read - {num_processed} kept " +
@@ -101,7 +108,6 @@ def cleanImages():
 
 def generate_datasets(image_size = IMAGE_SIZE, batch_size = BATCH_SIZE, val_split = 0.2,
                       shuffle_train = True, shuffle_size = 1024, test_split = None):
-
     train_dataset = tf.keras.preprocessing.image_dataset_from_directory(
         IMAGES_FOLDER,
         validation_split = val_split,
@@ -180,6 +186,64 @@ def build_model(input_shape, num_classes):
 
     # Entry block
     x = Rescaling(1.0 / 255)(x)
+    x = Conv2D(32, 3, strides = (3, 3), padding = "same")(x)
+    x = Activation("relu")(x)
+    x = BatchNormalization()(x)
+    x = MaxPooling2D(pool_size = (2, 2))(x)
+    x = Dropout(0.25)(x)
+
+    x = Conv2D(64, kernel_size = (3, 3), padding = "same")(x)
+    x = Activation("relu")(x)
+    x = BatchNormalization()(x)
+    x = MaxPooling2D(pool_size = (2, 2))(x)
+    x = Dropout(0.25)(x)
+
+    x = Conv2D(128, kernel_size = (3, 3), padding = "same")(x)
+    x = Activation("relu")(x)
+    x = BatchNormalization()(x)
+    x = MaxPooling2D(pool_size = (2, 2))(x)
+    x = Dropout(0.25)(x)
+
+    x = Flatten()(x)
+
+    x = Dense(512, activation = "relu")(x)
+    x = BatchNormalization()(x)
+    x = Dropout(0.5)(x)
+
+    if num_classes == 2:
+        activation = "sigmoid"
+        units = 1
+    else:
+        activation = "softmax"
+        units = num_classes
+
+    outputs = Dense(units, activation = activation)(x)
+
+    model = Model(inputs, outputs)
+    model.compile(
+        optimizer = Adam(LR_RATE),
+        loss = "binary_crossentropy",
+        metrics = ["acc"]
+    )
+
+    return model
+
+
+def build_model_2(input_shape, num_classes):
+    inputs = Input(shape = input_shape)
+    x = inputs
+
+    if GPU_AVAILABLE:
+        # apply augmentation layer if GPU is available
+        print("GPU is available! Applying data augmentation to model as layers")
+        data_augmentation = Sequential([
+            RandomFlip("horizontal"),
+            RandomRotation(0.1),
+        ])
+        x = data_augmentation(x)
+
+    # Entry block
+    x = Rescaling(1.0 / 255)(x)
     x = Conv2D(32, 3, strides = 2, padding = "same")(x)
     x = BatchNormalization()(x)
     x = Activation("relu")(x)
@@ -233,15 +297,16 @@ def build_model(input_shape, num_classes):
     return model
 
 
-DO_TRAINING = True
-DO_PREDICTIONS = False
+DO_TRAINING = False
+DO_PREDICTIONS = True
 MODEL_SAVE_NAME = 'kr-cats-vs-dogs.hd5'
-MODEL_SAVE_PATH = pathlib.Path(__file__).absolute() / 'model_states' / MODEL_SAVE_NAME
+MODEL_SAVE_PATH = pathlib.Path(__file__).absolute().parents[0] / 'model_states' / MODEL_SAVE_NAME
 
 
 def main():
     # clean image files
     # cleanImages()
+    # sys.exit(-1)
 
     # generate datasets from folders
     train_dataset, val_dataset, test_dataset = \
@@ -249,6 +314,7 @@ def main():
 
     # display images from training dataset
     # NOTE: since this dataset is shuffled, we'll get random images
+    print("Displaying sample...", flush = True)
     display_sample(train_dataset)
 
     if DO_TRAINING:
@@ -256,8 +322,12 @@ def main():
         model = build_model(input_shape = IMAGE_SIZE + (3,), num_classes = 2)
         print(model.summary())
 
+        # model2 = build_model_2(input_shape = IMAGE_SIZE + (3,), num_classes = 2)
+        # print(model2.summary())
+        # sys.exit(-1)
+
         callbacks = [
-            ModelCheckpoint("save_at_{epoch}.hd5"),
+            ModelCheckpoint("./model_states/save_at_{epoch}.hd5", save_best_only = True),
         ]
         hist = model.fit(train_dataset, epochs = EPOCHS, callbacks = callbacks, validation_data = val_dataset)
         kru.show_plots(hist.history, metric = 'acc', plot_title = 'Model performance')
@@ -278,6 +348,15 @@ def main():
         # load model
         model = kru.load_model(MODEL_SAVE_PATH)
         print(model.summary())
+
+        # evaluate performance
+        # print("Evaluating...")
+        # loss, acc = model.evaluate(train_dataset, verbose = 1)
+        # print(f"  Training dataset  -> loss: {loss:.3f} - acc: {acc:.3f}")
+        # loss, acc = model.evaluate(val_dataset, verbose = 1)
+        # print(f"  Cross-val dataset -> loss: {loss:.3f} - acc: {acc:.3f}")
+        # loss, acc = model.evaluate(test_dataset, verbose = 1)
+        # print(f"  Testing dataset   -> loss: {loss:.3f} - acc: {acc:.3f}")
 
         y_true, y_pred = np.array([]), np.array([])
 

@@ -9,22 +9,9 @@ This code is meant for illustration/educational puroposes ONLY and may not be su
 for production deployment.
 Use code at your own risk!! I am not responsible if your machine explodes :D
 """
-import sys, os
-import numpy as np
-import pandas as pd
-import pandas_datareader.data as web
+import pathlib
 
-print(f"Using Numpy {np.__version__}, Pandas {pd.__version__}")
+MODEL_SAVE_NAME = 'kr-cats-vs-dogs.hd5'
+MODEL_SAVE_PATH = pathlib.Path(__file__).absolute().parents[0] / 'model_states' / MODEL_SAVE_NAME
 
-df = web.get_data_yahoo("aapl", interval="m") # Apple
-print(df.head())
-print(df.tail())
-df.to_csv('./data/aapl_m.csv')
-assert os.path.exists('./data/aapl.csv'), "ERROR: failed to save aapl.csv"
-
-
-
-
-
-
-
+print(f"Model save path: {MODEL_SAVE_PATH}")
