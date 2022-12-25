@@ -14,10 +14,12 @@ Usage:
 
 # imports & tweaks
 import warnings
+
 warnings.filterwarnings('ignore')
 
 import sys
 import os
+
 # reduce warnings overload from Tensorflow (errors & fatals only!)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -27,6 +29,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import itertools
+
+# assume you have plotly installed
+HAVE_PLOTLY = True
+try:
+    import plotly
+except ImportError:
+    HAVE_PLOTLY = False
 
 import tensorflow as tf
 from tensorflow.keras import backend as K
@@ -52,7 +61,7 @@ __version__ = "1.5.0"
 __author__ = "Manish Bhobe"
 
 
-def seed_all(seed=None):
+def seed_all(seed = None):
     # to ensure that you get consistent results across runs & machines
     """seed all random number generators to get consistent results
        across multiple runs ON SAME MACHINE - you may get different results
@@ -87,30 +96,49 @@ def setupSciLabModules():
     setup libraries such as Numpy, Pandas, seaborn etc.
     """
     try:
-        def float_formatter(x): return '%.4f' % x
-        np.set_printoptions(formatter={'float_kind': float_formatter})
-        np.set_printoptions(threshold=np.inf, suppress=True, precision=4, linewidth=1024)
+        def float_formatter(x):
+            return '%.4f' % x
+
+        np.set_printoptions(formatter = {'float_kind': float_formatter})
+        np.set_printoptions(threshold = np.inf, suppress = True, precision = 4, linewidth = 1024)
     except NameError:
         # Numpy was not imported, so skip Numpy tweaks
-        print("Skipping Numpy tweaks", flush=True)
+        print("Skipping Numpy tweaks", flush = True)
+        pass
+
+    try:
+        # @see: https://towardsdatascience.com/8-commonly-used-pandas-display-options-you-should-know-a832365efa95
+        pd.set_option("display.max_rows", 80)
+        pd.set_option("display.max_columns", 50)
+        # display floats with 4 decimals
+        # pd.set_option('display.precision', 4)
+        # better way to show floats, with ,
+        pd.options.display.float_format = '{:,.4f}'.format
+        # pd.set_option('display.max_colwidth', 75)
+        # set pandas plotting backend to plotly if we HAVE_PLOTLY
+        if HAVE_PLOTLY:
+            pd.options.plotting.backend = "plotly"
+    except NameError:
+        # pandas import error, skip
+        print("Skipping pandas tweaks", flush = True)
         pass
 
     try:
         plt.style.use('seaborn')
     except NameError:
         # Matplotlib was not imported, so skip Matplotlib tweaks
-        print("Skipping Matplotlib tweaks", flush=True)
+        print("Skipping Matplotlib tweaks", flush = True)
         pass
 
     try:
-        sns.set(context='notebook', style='whitegrid', font_scale=1.2)
+        sns.set(context = 'notebook', style = 'whitegrid', font_scale = 1.2)
     except NameError:
         # Seaborn was not imported, so skip Matplotlib tweaks
-        print("Skipping Seaborn tweaks", flush=True)
+        print("Skipping Seaborn tweaks", flush = True)
         pass
 
 
-def progbar_msg(curr_tick, max_tick, head_msg, tail_msg, final=False):
+def progbar_msg(curr_tick, max_tick, head_msg, tail_msg, final = False):
     # --------------------------------------------------------------------
     # Keras like progress bar, used when copying files to show progress
     # --------------------------------------------------------------------
@@ -123,15 +151,15 @@ def progbar_msg(curr_tick, max_tick, head_msg, tail_msg, final=False):
         prog_msg = '  %s (%*d/%*d) [%s%s%s] %s%s' % (
             head_msg, len_max_tick, curr_tick, len_max_tick, max_tick, '=' * prog, '>', '.' * bal,
             tail_msg, ' ' * 35)
-        print('\r%s' % prog_msg, end='', flush=True)
+        print('\r%s' % prog_msg, end = '', flush = True)
     else:
         prog_msg = '  %s (%*d/%*d) [%s] %s%s\n' % (
             head_msg, len_max_tick, max_tick, len_max_tick, max_tick, '=' * progbar_len, tail_msg,
             ' ' * 35)
-        print('\r%s' % prog_msg, end='', flush=True)
+        print('\r%s' % prog_msg, end = '', flush = True)
 
 
-def show_plots(history, metric=None, plot_title=None, fig_size=None):
+def show_plots(history, metric = None, plot_title = None, fig_size = None):
     import seaborn as sns
 
     """ Useful function to view plot of loss values & 'metric' across the various epochs
@@ -161,15 +189,15 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
     df = pd.DataFrame(history)
 
     with sns.axes_style("darkgrid"):
-        sns.set_context("notebook", font_scale=1.1)
+        sns.set_context("notebook", font_scale = 1.1)
         sns.set_style({"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]})
 
-        f, ax = plt.subplots(nrows=1, ncols=col_count, figsize=((16, 5) if fig_size is None else fig_size))
+        f, ax = plt.subplots(nrows = 1, ncols = col_count, figsize = ((16, 5) if fig_size is None else fig_size))
         axs = ax[0] if col_count == 2 else ax
 
         # plot the losses
         losses_df = df.loc[:, loss_metrics]
-        losses_df.plot(ax=axs)
+        losses_df.plot(ax = axs)
         # ax[0].set_ylim(0.0, 1.0)
         axs.grid(True)
         losses_title = 'Training \'loss\' vs Epochs' if len(
@@ -179,7 +207,7 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
         # plot the metric, if specified
         if metric is not None:
             metrics_df = df.loc[:, other_metrics]
-            metrics_df.plot(ax=ax[1])
+            metrics_df.plot(ax = ax[1])
             ax[1].set_ylim(0.0, 1.0)
             ax[1].grid(True)
             metrics_title = f'Training \'{other_metrics[0]}\' vs Epochs' if len(other_metrics) == 1 \
@@ -193,26 +221,26 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
         plt.close()
 
 
-def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix',
-                          cmap=plt.cm.Blues):
+def plot_confusion_matrix(cm, classes, normalize = False, title = 'Confusion matrix',
+                          cmap = plt.cm.Blues):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.imshow(cm, interpolation = 'nearest', cmap = cmap)
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
+    plt.xticks(tick_marks, classes, rotation = 45)
     plt.yticks(tick_marks, classes)
 
     if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        cm = cm.astype('float') / cm.sum(axis = 1)[:, np.newaxis]
 
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, cm[i, j], horizontalalignment="center",
-                 color="white" if cm[i, j] > thresh else "black")
+        plt.text(j, i, cm[i, j], horizontalalignment = "center",
+                 color = "white" if cm[i, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('True label')
@@ -258,7 +286,7 @@ def save_model(model, file_path):
     print(f"Keras model saved to {file_path}")
 
 
-def load_model(file_path, custom_metrics_map=None):
+def load_model(file_path, custom_metrics_map = None):
     """ load Keras model from path """
     from tensorflow.keras import models
 
@@ -268,12 +296,12 @@ def load_model(file_path, custom_metrics_map=None):
     # load the state/weights etc. from file_path
     # @see: https://github.com/keras-team/keras/issues/3911
     # useful when you have custom metrics
-    model = models.load_model(file_path, custom_objects=custom_metrics_map)
+    model = models.load_model(file_path, custom_objects = custom_metrics_map)
     print(f"Keras model loaded from {file_path}")
     return model
 
 
-def save_model2(model, base_file_name, save_dir=os.path.join('.', 'model_states')):
+def save_model2(model, base_file_name, save_dir = os.path.join('.', 'model_states')):
     """ save everything to one HDF5 file """
 
     # save the model
@@ -309,8 +337,8 @@ def save_model2(model, base_file_name, save_dir=os.path.join('.', 'model_states'
     print('Saved model to file %s' % model_save_path)
 
 
-def load_model2(base_file_name, save_dir=os.path.join('.', 'model_states'),
-                custom_metrics_map=None, use_tf_keras_impl=True):
+def load_model2(base_file_name, save_dir = os.path.join('.', 'model_states'),
+                custom_metrics_map = None, use_tf_keras_impl = True):
     """load model from HDF5 file"""
     if not base_file_name.lower().endswith('.h5'):
         base_file_name = base_file_name + '.h5'
@@ -335,7 +363,7 @@ def load_model2(base_file_name, save_dir=os.path.join('.', 'model_states'),
     # load the state/weights etc. from .h5 file
     # @see: https://github.com/keras-team/keras/issues/3911
     # useful when you have custom metrics
-    model = load_model(model_save_path, custom_objects=custom_metrics_map)
+    model = load_model(model_save_path, custom_objects = custom_metrics_map)
     print('Loaded Keras model from %s' % model_save_path)
     return model
 
@@ -371,7 +399,7 @@ def save_model_json(model, file_path):
     print(f"Saved model to files {json_file_path} and weights to {h5_file_path}")
 
 
-def load_model_json(model, json_file_path, weights_path=None):
+def load_model_json(model, json_file_path, weights_path = None):
     """ 
     loads model structure & weights from JSON 
         @params:
@@ -426,7 +454,7 @@ def load_model_json(model, json_file_path, weights_path=None):
     return model
 
 
-def save_model_json2(model, base_file_name, save_dir=os.path.join('.', 'model_states')):
+def save_model_json2(model, base_file_name, save_dir = os.path.join('.', 'model_states')):
     """ save the model structure to JSON & weights to HD5 """
     # check if save_dir exists, else create it
     if not os.path.exists(save_dir):
@@ -449,8 +477,8 @@ def save_model_json2(model, base_file_name, save_dir=os.path.join('.', 'model_st
     print("Saved model to files %s and %s" % (json_file_path, h5_file_path))
 
 
-def load_model_json2(base_file_name, load_dir=os.path.join('.', 'keras_models'),
-                     use_tf_keras_impl=True):
+def load_model_json2(base_file_name, load_dir = os.path.join('.', 'keras_models'),
+                     use_tf_keras_impl = True):
     """ loads model structure & weights from previously saved state """
     # model structure is loaded $(load_dir)/base_file_name.json
     # weights are loaded from $(load_dir)/base_file_name.h5
@@ -478,7 +506,7 @@ def load_model_json2(base_file_name, load_dir=os.path.join('.', 'keras_models'),
     return loaded_model
 
 
-def extract_files(arch_path, to_dir='.'):
+def extract_files(arch_path, to_dir = '.'):
     """extracts all files from a archive file (zip, tar. tar.bz2 file)
        at arch_path to the 'to_dir' directory """
     import os
@@ -504,7 +532,7 @@ def extract_files(arch_path, to_dir='.'):
                         # try various options to open archive file
                         with opener(arch_path, mode) as f:
                             opened_successfully = True
-                            print(f"Extracting files from archive using {opener_str} opener...", flush=True)
+                            print(f"Extracting files from archive using {opener_str} opener...", flush = True)
                             f.extractall()
                             break
                     except:
