@@ -27,3 +27,8 @@ __pycache__
 
 # ignore tutorial folder (for now)
 tutorial
+
+# ignore zip/tar files
+*.gz
+*.tar
+*.zip
