@@ -7,12 +7,13 @@ This code is meant for education purposes only & is not intended for commercial/
 Use at your own risk!! I am not responsible if your CPU or GPU gets fried :D
 """
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 import os
 
 # reduce warnings overload from Tensorflow
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 import sys
 import random
@@ -30,15 +31,24 @@ import seaborn as sns
 # Keras imports
 import tensorflow as tf
 from tensorflow import keras
+
 print(f"Using Tensorflow {tf.__version__} - Keras {keras.__version__}")
-USING_TF2 = (int(tf.__version__[0]) >= 2)  # tf.__version__.startswith("2")
+USING_TF2 = int(tf.__version__[0]) >= 2  # tf.__version__.startswith("2")
 
 # using Tensorflow's implementation of Keras
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Flatten, BatchNormalization
+from tensorflow.keras.layers import (
+    Dense,
+    Dropout,
+    Conv2D,
+    MaxPooling2D,
+    Flatten,
+    BatchNormalization,
+)
 from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.callbacks import LearningRateScheduler
+
 # my helper functions for Keras
 import kr_helper_funcs as kru
 
@@ -55,12 +65,12 @@ import kr_helper_funcs as kru
 # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 seed = kru.seed_all()
-kru.setupModules()
+kru.setupScilab()
 
 # some globals
 IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS, NUM_CLASSES = 28, 28, 1, 10
 NUM_EPOCHS, BATCH_SIZE, LEARNING_RATE, L2_REG = 7, 64, 0.001, 0.0005
-MODEL_SAVE_DIR = os.path.join('.', 'model_states')
+MODEL_SAVE_DIR = os.path.join(".", "model_states")
 
 # --------------------------------------------------------------------------
 # helper functions
@@ -68,8 +78,12 @@ MODEL_SAVE_DIR = os.path.join('.', 'model_states')
 
 
 def display_sample(
-    sample_images, sample_labels, sample_predictions=None, num_cols=10,
-    plot_title=None, fig_size=None
+    sample_images,
+    sample_labels,
+    sample_predictions=None,
+    num_cols=10,
+    plot_title=None,
+    fig_size=None,
 ):
     import seaborn as sns
 
@@ -81,26 +95,35 @@ def display_sample(
     """
     # assert sample_images.shape[0] == num_rows * num_cols
     num_rows = sample_images.shape[0] // num_cols
-    if (sample_images.shape[0] % num_cols > 0):
+    if sample_images.shape[0] % num_cols > 0:
         num_rows += 1
 
     with sns.axes_style("whitegrid"):
         sns.set_context("notebook", font_scale=1.1)
-        sns.set_style({"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]})
+        sns.set_style(
+            {"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]}
+        )
 
-        f, ax = plt.subplots(num_rows, num_cols, figsize=((14, 10) if fig_size is None else fig_size),
-                             gridspec_kw={"wspace": 0.05, "hspace": 0.35}, squeeze=True)
-        
+        f, ax = plt.subplots(
+            num_rows,
+            num_cols,
+            figsize=((14, 10) if fig_size is None else fig_size),
+            gridspec_kw={"wspace": 0.05, "hspace": 0.35},
+            squeeze=True,
+        )
+
         indexes = [(r, c) for r in range(num_rows) for c in range(num_cols)]
 
-#        for r in range(num_rows):
-#            for c in range(num_cols):
-        for (r, c) in indexes:
+        #        for r in range(num_rows):
+        #            for c in range(num_cols):
+        for r, c in indexes:
             image_index = r * num_cols + c
             if image_index < sample_images.shape[0]:
                 ax[r, c].axis("off")
                 # show selected image
-                ax[r, c].imshow(sample_images[image_index], cmap="Greys", interpolation='nearest')
+                ax[r, c].imshow(
+                    sample_images[image_index], cmap="Greys", interpolation="nearest"
+                )
 
                 if sample_predictions is None:
                     # show the actual labels in the cell title
@@ -109,15 +132,15 @@ def display_sample(
                     # else check if prediction matches actual value
                     true_label = sample_labels[image_index]
                     pred_label = sample_predictions[image_index]
-                    prediction_matches_true = (true_label == pred_label)
+                    prediction_matches_true = true_label == pred_label
                     if prediction_matches_true:
                         # if actual == prediction, cell title is prediction shown in green font
                         title = "%d" % true_label
-                        title_color = 'g'
+                        title_color = "g"
                     else:
                         # if actual != prediction, cell title is actua/prediction in red font
-                        title = '%d/%d' % (true_label, pred_label)
-                        title_color = 'r'
+                        title = "%d/%d" % (true_label, pred_label)
+                        title_color = "r"
                     # display cell title
                     title = ax[r, c].set_title(title)
                     plt.setp(title, color=title_color)
@@ -145,9 +168,15 @@ def load_data(debug=True):
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
     if debug:
-        print('Before preprocessing:')
-        print(' - X_train.shape = {}, y_train.shape = {}'.format(X_train.shape, y_train.shape))
-        print(' - X_test.shape = {}, y_test.shape = {}'.format(X_test.shape, y_test.shape))
+        print("Before preprocessing:")
+        print(
+            " - X_train.shape = {}, y_train.shape = {}".format(
+                X_train.shape, y_train.shape
+            )
+        )
+        print(
+            " - X_test.shape = {}, y_test.shape = {}".format(X_test.shape, y_test.shape)
+        )
 
     # Per Andrew Ng's advise from his Structured ML course:
     # the test & cross-validation datasets must come from the same distribution
@@ -180,9 +209,9 @@ def load_data(debug=True):
     test_images, test_labels = X_test.copy(), y_test.copy()
 
     # scale the images to between 0-1
-    X_train = X_train.astype('float32') / 255.0
-    X_val = X_val.astype('float32') / 255.0
-    X_test = X_test.astype('float32') / 255.0
+    X_train = X_train.astype("float32") / 255.0
+    X_val = X_val.astype("float32") / 255.0
+    X_test = X_test.astype("float32") / 255.0
 
     # one-hot encode labels to 10 output classes corresponding to digits 0-9
     # y_train = to_categorical(y_train, 10)
@@ -190,18 +219,31 @@ def load_data(debug=True):
     # y_test = to_categorical(y_test, 10)
 
     # reshape the image arrays (make 2D arrays instead of 3D arrays)
-    X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], X_train.shape[2], NUM_CHANNELS))
-    X_val = np.reshape(X_val, (X_val.shape[0], X_val.shape[1], X_val.shape[2], NUM_CHANNELS))
-    X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], X_test.shape[2], NUM_CHANNELS))
+    X_train = np.reshape(
+        X_train, (X_train.shape[0], X_train.shape[1], X_train.shape[2], NUM_CHANNELS)
+    )
+    X_val = np.reshape(
+        X_val, (X_val.shape[0], X_val.shape[1], X_val.shape[2], NUM_CHANNELS)
+    )
+    X_test = np.reshape(
+        X_test, (X_test.shape[0], X_test.shape[1], X_test.shape[2], NUM_CHANNELS)
+    )
 
     if debug:
-        print('After preprocessing:')
-        print(f' - X_train.shape = {X_train.shape}, y_train.shape = {y_train.shape}')
-        print(f' - X_val.shape = {X_val.shape}, y_val.shape = {y_val.shape}')
-        print(f' - X_test.shape = {X_test.shape}, y_test.shape = {y_test.shape}')
-        print(f' - test_images.shape = {test_images.shape}, test_labels.shape = {test_labels.shape}')
+        print("After preprocessing:")
+        print(f" - X_train.shape = {X_train.shape}, y_train.shape = {y_train.shape}")
+        print(f" - X_val.shape = {X_val.shape}, y_val.shape = {y_val.shape}")
+        print(f" - X_test.shape = {X_test.shape}, y_test.shape = {y_test.shape}")
+        print(
+            f" - test_images.shape = {test_images.shape}, test_labels.shape = {test_labels.shape}"
+        )
 
-    return (X_train, y_train), (X_val, y_val), (X_test, y_test), (test_images, test_labels)
+    return (
+        (X_train, y_train),
+        (X_val, y_val),
+        (X_test, y_test),
+        (test_images, test_labels),
+    )
 
 
 def step_lr(epoch):
@@ -217,45 +259,67 @@ def step_lr(epoch):
 def build_model_ann(l2_loss_lambda=None):
     l2_reg = None if l2_loss_lambda is None else l2(l2_loss_lambda)
 
-    model = Sequential([
-        Flatten(input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS)),
-        Dense(128, activation='relu', kernel_regularizer=l2_reg),
-        Dropout(0.10),
-        Dense(64, activation='relu', kernel_regularizer=l2_reg),
-        Dropout(0.10),
-        # for binary classification activation='sigmoid', for multi-class
-        # classification set activation='softmax'
-        Dense(NUM_CLASSES, activation='softmax')
-    ])
+    model = Sequential(
+        [
+            Flatten(input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS)),
+            Dense(128, activation="relu", kernel_regularizer=l2_reg),
+            Dropout(0.10),
+            Dense(64, activation="relu", kernel_regularizer=l2_reg),
+            Dropout(0.10),
+            # for binary classification activation='sigmoid', for multi-class
+            # classification set activation='softmax'
+            Dense(NUM_CLASSES, activation="softmax"),
+        ]
+    )
     opt = Adam(learning_rate=LEARNING_RATE)
-    model.compile(optimizer=opt, loss='sparse_categorical_crossentropy',
-                  metrics=['sparse_categorical_accuracy'])
+    model.compile(
+        optimizer=opt,
+        loss="sparse_categorical_crossentropy",
+        metrics=["sparse_categorical_accuracy"],
+    )
     return model
 
 
 def build_model_cnn(l2_loss_lambda=None):
     l2_reg = None if l2_loss_lambda is None else l2(l2_loss_lambda)
 
-    model = Sequential([
-        Conv2D(128, kernel_size=(3, 3), padding='SAME', activation='relu', kernel_regularizer=l2_reg,
-               input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS)),
-        BatchNormalization(),
-        MaxPooling2D((2, 2)),
-        Dropout(0.20),
-        Conv2D(64, kernel_size=(3, 3), padding='SAME', activation='relu', kernel_regularizer=l2_reg),
-        BatchNormalization(),
-        MaxPooling2D((2, 2)),
-        Dropout(0.10),
-        Flatten(),
-        Dense(512, activation='relu', kernel_regularizer=l2_reg),
-        Dropout(0.20),
-        # for binary classification activation='sigmoid', for multi-class
-        # classification set activation='softmax'
-        Dense(NUM_CLASSES, activation='softmax')
-    ])
+    model = Sequential(
+        [
+            Conv2D(
+                128,
+                kernel_size=(3, 3),
+                padding="SAME",
+                activation="relu",
+                kernel_regularizer=l2_reg,
+                input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS),
+            ),
+            BatchNormalization(),
+            MaxPooling2D((2, 2)),
+            Dropout(0.20),
+            Conv2D(
+                64,
+                kernel_size=(3, 3),
+                padding="SAME",
+                activation="relu",
+                kernel_regularizer=l2_reg,
+            ),
+            BatchNormalization(),
+            MaxPooling2D((2, 2)),
+            Dropout(0.10),
+            Flatten(),
+            Dense(512, activation="relu", kernel_regularizer=l2_reg),
+            Dropout(0.20),
+            # for binary classification activation='sigmoid', for multi-class
+            # classification set activation='softmax'
+            Dense(NUM_CLASSES, activation="softmax"),
+        ]
+    )
     opt = Adam(learning_rate=LEARNING_RATE)
-    model.compile(optimizer=opt, loss='sparse_categorical_crossentropy',
-                  metrics=['sparse_categorical_accuracy'])
+    model.compile(
+        optimizer=opt,
+        loss="sparse_categorical_crossentropy",
+        metrics=["sparse_categorical_accuracy"],
+    )
     return model
 
 
@@ -264,17 +328,21 @@ DO_PREDICTION = True
 SHOW_SAMPLE = True
 SAMPLE_SIZE = 50
 USE_CNN = True
-MODEL_FILE_NAME = 'kr_mnist_cnn.h5' if USE_CNN else 'kr_mnist_dnn.h5'
+MODEL_FILE_NAME = "kr_mnist_cnn.h5" if USE_CNN else "kr_mnist_dnn.h5"
 MODEL_SAVE_PATH = os.path.join(MODEL_SAVE_DIR, MODEL_FILE_NAME)
 
 
 def main():
-    (X_train, y_train), (X_val, y_val), (X_test, y_test), \
-            (test_images, test_labels) = load_data()
+    (
+        (X_train, y_train),
+        (X_val, y_val),
+        (X_test, y_test),
+        (test_images, test_labels),
+    ) = load_data()
     print(
-        f"X_train.shape = {X_train.shape} - y_train.shape = {y_train.shape} " +
-        f"- X_val.shape = {X_val.shape} - y_val.shape = {y_val.shape} " +
-        f"- X_test.shape = {X_test.shape} - y_test.shape = {y_test.shape}"
+        f"X_train.shape = {X_train.shape} - y_train.shape = {y_train.shape} "
+        + f"- X_val.shape = {X_val.shape} - y_val.shape = {y_val.shape} "
+        + f"- X_test.shape = {X_test.shape} - y_test.shape = {y_test.shape}"
     )
 
     if SHOW_SAMPLE:
@@ -282,34 +350,39 @@ def main():
         rand_indexes = np.random.randint(0, len(X_test), SAMPLE_SIZE)
         sample_images = test_images[rand_indexes]
         sample_labels = test_labels[rand_indexes]
-        display_sample(sample_images, sample_labels, 
-                plot_title=f'Sample of {SAMPLE_SIZE} images')
+        display_sample(
+            sample_images, sample_labels, plot_title=f"Sample of {SAMPLE_SIZE} images"
+        )
 
     if DO_TRAINING:
         if USE_CNN:
-            print('Using CNN architecture...')
+            print("Using CNN architecture...")
             model = build_model_cnn(l2_loss_lambda=L2_REG)
         else:
-            print('Using ANN/MLP architecture...')
+            print("Using ANN/MLP architecture...")
             model = build_model_ann(l2_loss_lambda=L2_REG)
         print(model.summary())
 
         lr_scheduler = LearningRateScheduler(step_lr)
         hist = model.fit(
-            X_train, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE,
-            validation_data=(X_val, y_val), callbacks=[lr_scheduler]
+            X_train,
+            y_train,
+            epochs=NUM_EPOCHS,
+            batch_size=BATCH_SIZE,
+            validation_data=(X_val, y_val),
+            callbacks=[lr_scheduler],
         )
 
-        kru.show_plots(hist.history, metric='sparse_categorical_accuracy')
+        kru.show_plots(hist.history, metric="sparse_categorical_accuracy")
 
         # evaluate model performance
         print(f'\nEvaluating {"CNN" if USE_CNN else "ANN/MLP"} model performance...')
         loss, acc = model.evaluate(X_train, y_train)
-        print(f'  Training dataset  -> loss: {loss:.4f} - acc: {acc:.4f}')
+        print(f"  Training dataset  -> loss: {loss:.4f} - acc: {acc:.4f}")
         loss, acc = model.evaluate(X_val, y_val)
-        print(f'  Cross-val dataset  -> loss: {loss:.4f} - acc: {acc:.4f}')
+        print(f"  Cross-val dataset  -> loss: {loss:.4f} - acc: {acc:.4f}")
         loss, acc = model.evaluate(X_test, y_test)
-        print(f'  Test dataset  -> loss: {loss:.4f} - acc: {acc:.4f}')
+        print(f"  Test dataset  -> loss: {loss:.4f} - acc: {acc:.4f}")
 
         kru.save_model(model, MODEL_SAVE_PATH)
         del model
@@ -321,17 +394,17 @@ def main():
 
         print(f'\nEvaluating {"CNN" if USE_CNN else "ANN/MLP"} model performance...')
         loss, acc = model.evaluate(X_train, y_train)
-        print(f'  Training dataset  -> loss: {loss:.4f} - acc: {acc:.4f}')
+        print(f"  Training dataset  -> loss: {loss:.4f} - acc: {acc:.4f}")
         loss, acc = model.evaluate(X_val, y_val)
-        print(f'  Cross-val dataset  -> loss: {loss:.4f} - acc: {acc:.4f}')
+        print(f"  Cross-val dataset  -> loss: {loss:.4f} - acc: {acc:.4f}")
         loss, acc = model.evaluate(X_test, y_test)
-        print(f'  Test dataset  -> loss: {loss:.4f} - acc: {acc:.4f}')
+        print(f"  Test dataset  -> loss: {loss:.4f} - acc: {acc:.4f}")
 
         y_pred = model.predict(X_test)
         y_pred = np.argmax(y_pred, axis=1)
-        print('Sample labels (50): ', y_test[:50])
-        print('Sample predictions (50): ', y_pred[:50])
-        print('We got %d/%d incorrect!' % ((y_pred != y_test).sum(), len(y_test)))
+        print("Sample labels (50): ", y_test[:50])
+        print("Sample predictions (50): ", y_pred[:50])
+        print("We got %d/%d incorrect!" % ((y_pred != y_test).sum(), len(y_test)))
 
         if SHOW_SAMPLE:
             # display sample predictions
@@ -340,12 +413,16 @@ def main():
             sample_labels = test_labels[rand_indexes]
             sample_predictions = y_pred[rand_indexes]
 
-            model_type = 'CNN' if USE_CNN else 'ANN'
+            model_type = "CNN" if USE_CNN else "ANN"
             display_sample(
-                sample_images, sample_labels, sample_predictions,
-                plot_title=f'Keras {model_type} - {SAMPLE_SIZE} random predictions')
+                sample_images,
+                sample_labels,
+                sample_predictions,
+                plot_title=f"Keras {model_type} - {SAMPLE_SIZE} random predictions",
+            )
 
             del model
+
 
 # --------------------------------------------------------------
 # Results:
