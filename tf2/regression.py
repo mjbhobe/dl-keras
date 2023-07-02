@@ -39,13 +39,13 @@ def get_model():
             Dense(1, input_shape=(1,), activation=None),
         ]
     )
-    model.compile(
-        loss="mean_squared_error", optimizer="sgd"
-    )
+    model.compile(loss="mean_squared_error", optimizer="sgd")
     return model
+
 
 def main():
     parser = TrainingArgsParser()
+    # Hey! You can add more args to parser here before parse_args call
     args = parser.parse_args()
 
     MODEL_SAVE_PATH = MODEL_SAVE_BASE_PATH / f"univar_regression.pkl"
@@ -91,6 +91,7 @@ def main():
         plt.legend(loc="best")
         plt.show()
         del model
+
 
 if __name__ == "__main__":
     main()
