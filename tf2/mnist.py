@@ -25,6 +25,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Dropout
 import kr_helper_funcs as kru
 
+
 def get_data():
     # download & prepare the dataset
     (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
@@ -46,6 +47,7 @@ def get_data():
     )
     return (X_train, y_train), (X_test, y_test)
 
+
 def get_model(version=1, dropout=None):
     # ------------------------------------------------------------------------
     # Model Performance
@@ -63,8 +65,10 @@ def get_model(version=1, dropout=None):
     if version == 1:
         model = Sequential(
             [
-                Flatten(input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS,),
-                        name="input_layer"),
+                Flatten(
+                    input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS),
+                    name="input_layer",
+                ),
                 Dense(NUM_CLASSES, activation="softmax", name="output_layer"),
             ]
         )
@@ -72,8 +76,14 @@ def get_model(version=1, dropout=None):
         # add a hidden layer
         model = Sequential(
             [
-                Flatten(input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS,),
-                        name="input_layer"),
+                Flatten(
+                    input_shape=(
+                        IMAGE_HEIGHT,
+                        IMAGE_WIDTH,
+                        NUM_CHANNELS,
+                    ),
+                    name="input_layer",
+                ),
                 Dense(NUM_HIDDEN, activation="relu", name="hidden_layer"),
                 Dense(NUM_CLASSES, activation="softmax", name="output_layer"),
             ]
@@ -82,8 +92,14 @@ def get_model(version=1, dropout=None):
         # add 2 hidden layers
         model = Sequential(
             [
-                Flatten(input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS,),
-                        name="input_layer"),
+                Flatten(
+                    input_shape=(
+                        IMAGE_HEIGHT,
+                        IMAGE_WIDTH,
+                        NUM_CHANNELS,
+                    ),
+                    name="input_layer",
+                ),
                 Dense(NUM_HIDDEN, activation="relu", name="hidden_layer1"),
                 Dense(NUM_HIDDEN, activation="relu", name="hidden_layer2"),
                 Dense(NUM_CLASSES, activation="softmax", name="output_layer"),
@@ -93,8 +109,14 @@ def get_model(version=1, dropout=None):
         # add 2 hidden layers + dropout
         model = Sequential(
             [
-                Flatten(input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS,),
-                        name="input_layer"),
+                Flatten(
+                    input_shape=(
+                        IMAGE_HEIGHT,
+                        IMAGE_WIDTH,
+                        NUM_CHANNELS,
+                    ),
+                    name="input_layer",
+                ),
                 Dense(NUM_HIDDEN, activation="relu", name="hidden_layer1"),
                 Dropout(dropout),
                 Dense(NUM_HIDDEN, activation="relu", name="hidden_layer2"),
@@ -103,19 +125,20 @@ def get_model(version=1, dropout=None):
             ]
         )
 
-    model.compile(
-        loss="categorical_crossentropy", optimizer="sgd", metrics=["accuracy"]
-    )
+    model.compile(loss="categorical_crossentropy", optimizer="sgd", metrics=["accuracy"])
     return model
 
+
 def main():
+    # create parser with all default params
     parser = TrainingArgsParser()
+    # Hey! you can add your own here
     parser.add_argument(
         "--model_version",
         type=int,
         default=1,
-        help="Model version. 1=base, 2=1 hidden layer, 3=2 hidden layers, \n" +
-            "4=2 hidden layers + dropout, 5=2 hidden layers + dropout + batch norm  (default 1)",
+        help="Model version. 1=base, 2=1 hidden layer, 3=2 hidden layers, \n"
+        + "4=2 hidden layers + dropout, 5=2 hidden layers + dropout + batch norm  (default 1)",
     )
     parser.add_argument(
         "--val_split",
@@ -182,6 +205,7 @@ def main():
             f"We got {num_correct} of {len(X_test)} correct predictions (an accuracy = {float(num_correct)/len(X_test) * 100:.2f}%)!"
         )
         del model
+
 
 if __name__ == "__main__":
     main()
