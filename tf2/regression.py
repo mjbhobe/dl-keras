@@ -1,4 +1,4 @@
-# regression.py - simple linear regression with Python
+# regression.py - simple linear regression with Tensorflow 2.0 & Keras
 import random
 import pathlib
 import numpy as np

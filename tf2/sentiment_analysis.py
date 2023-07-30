@@ -23,8 +23,7 @@ from cl_options import TrainingArgsParser
 
 def get_data(num_words, max_seq_len):
     # download & prepare the dataset
-    (X_train, y_train), (X_test, y_test) = \
-        tf.keras.datasets.imdb.load_data(num_words=num_words)
+    (X_train, y_train), (X_test, y_test) = tf.keras.datasets.imdb.load_data(num_words=num_words)
     print(
         f"X_train.shape: {X_train.shape} - y_train.shape: {y_train.shape} - "
         f"X_test.shape: {X_test.shape} - y_test.shape: {y_test.shape}"
@@ -34,6 +33,7 @@ def get_data(num_words, max_seq_len):
     X_test = preprocessing.sequence.pad_sequences(X_test, maxlen=max_seq_len)
 
     return (X_train, y_train), (X_test, y_test)
+
 
 def get_model(vocab_size, embed_dim, max_seq_len):
     # ------------------------------------------------------------------------
@@ -48,17 +48,18 @@ def get_model(vocab_size, embed_dim, max_seq_len):
             # Takes the max value of either feature vector from each of
             # the vocab_size features.
             GlobalMaxPool1D(),
-            Dense(256, activation="relu"),
+            Dense(512, activation="relu"),
             Dropout(0.5),
+            Dense(256, activation="relu"),
+            Dropout(0.4),
             Dense(128, activation="relu"),
             Dropout(0.3),
             Dense(1, activation="sigmoid"),
         ]
     )
-    model.compile(
-        loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"]
-    )
+    model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
     return model
+
 
 def main():
     parser = TrainingArgsParser()
@@ -127,6 +128,7 @@ def main():
             f"We got {num_correct} of {len(X_test)} correct predictions (an accuracy = {float(num_correct)/len(X_test) * 100:.2f}%)!"
         )
         del model
+
 
 if __name__ == "__main__":
     main()
