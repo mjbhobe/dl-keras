@@ -6,11 +6,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
+import kr_helper_funcs as kru
 
 SEED = 42
-random.seed(SEED)
-np.random.seed(SEED)
-tf.random.set_seed(SEED)
+kru.seed_all(SEED)
+# random.seed(SEED)
+# np.random.seed(SEED)
+# tf.random.set_seed(SEED)
 
 print(f"Using Tensorflow {tf.__version__}")
 
@@ -19,7 +21,6 @@ MODEL_SAVE_BASE_PATH = pathlib.Path(__file__).parent / "model_state"
 # tensorflow inputs
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
-import kr_helper_funcs as kru
 from cl_options import TrainingArgsParser
 
 
@@ -61,8 +62,12 @@ def main():
         model = get_model()
         print(model.summary())
         if args.verbose == 0:
-            print(f"Training model for {args.epochs} epochs with batch_size={args.batch_size}")
-            print(f"NOTE: no progress will be reported as you chose --verbose={args.verbose}")
+            print(
+                f"Training model for {args.epochs} epochs with batch_size={args.batch_size}"
+            )
+            print(
+                f"NOTE: no progress will be reported as you chose --verbose={args.verbose}"
+            )
         hist = model.fit(
             data["area"],
             data["price"],

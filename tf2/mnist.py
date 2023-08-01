@@ -3,12 +3,14 @@ import random
 import pathlib
 import numpy as np
 import tensorflow as tf
+import kr_helper_funcs as kru
 from cl_options import TrainingArgsParser
 
 SEED = 42
-random.seed(SEED)
-np.random.seed(SEED)
-tf.random.set_seed(SEED)
+kru.seed_all(SEED)
+# random.seed(SEED)
+# np.random.seed(SEED)
+# tf.random.set_seed(SEED)
 
 print(f"Using Tensorflow {tf.__version__}")
 
@@ -23,7 +25,6 @@ MODEL_SAVE_BASE_PATH = pathlib.Path(__file__).parent / "model_state"
 # our model
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Dropout
-import kr_helper_funcs as kru
 
 
 def get_data():
@@ -125,7 +126,9 @@ def get_model(version=1, dropout=None):
             ]
         )
 
-    model.compile(loss="categorical_crossentropy", optimizer="sgd", metrics=["accuracy"])
+    model.compile(
+        loss="categorical_crossentropy", optimizer="sgd", metrics=["accuracy"]
+    )
     return model
 
 
@@ -167,8 +170,12 @@ def main():
         model = get_model(args.model_version, args.dropout)
         print(model.summary())
         if args.verbose == 0:
-            print(f"Training model for {args.epochs} epochs with batch_size={args.batch_size}")
-            print(f"NOTE: no progress will be reported as you chose --verbose={args.verbose}")
+            print(
+                f"Training model for {args.epochs} epochs with batch_size={args.batch_size}"
+            )
+            print(
+                f"NOTE: no progress will be reported as you chose --verbose={args.verbose}"
+            )
         hist = model.fit(
             X_train,
             y_train,

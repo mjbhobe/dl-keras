@@ -6,11 +6,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
+import kr_helper_funcs as kru
 
 SEED = 42
-random.seed(SEED)
-np.random.seed(SEED)
-tf.random.set_seed(SEED)
+kru.seed_all(SEED)
+# random.seed(SEED)
+# np.random.seed(SEED)
+# tf.random.set_seed(SEED)
 
 print(f"Using Tensorflow {tf.__version__}")
 
@@ -19,16 +21,31 @@ MODEL_SAVE_BASE_PATH = pathlib.Path(__file__).parent / "model_state"
 # tensorflow inputs
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Normalization
-import kr_helper_funcs as kru
 from cl_options import TrainingArgsParser
 
 
 def get_data(num_items=100):
     url = "https://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data"
-    column_names = ["mpg", "cylinders", "displacement", "horsepower", "weight", "acceleration", "model_year", "origin"]
+    column_names = [
+        "mpg",
+        "cylinders",
+        "displacement",
+        "horsepower",
+        "weight",
+        "acceleration",
+        "model_year",
+        "origin",
+    ]
 
     # read data from url
-    data = pd.read_csv(url, names=column_names, na_values="?", comment="\t", sep=" ", skipinitialspace=True)
+    data = pd.read_csv(
+        url,
+        names=column_names,
+        na_values="?",
+        comment="\t",
+        sep=" ",
+        skipinitialspace=True,
+    )
     data = data.drop(["origin"], axis=1)
     print(f"Number of null records: {data.isna().sum()}")
     data = data.dropna()
@@ -59,7 +76,15 @@ def main():
 
     MODEL_SAVE_PATH = MODEL_SAVE_BASE_PATH / f"multivar_regression.pkl"
     train_dataset, test_dataset = get_data()
-    column_names = ["mpg", "cylinders", "displacement", "horsepower", "weight", "acceleration", "model_year"]
+    column_names = [
+        "mpg",
+        "cylinders",
+        "displacement",
+        "horsepower",
+        "weight",
+        "acceleration",
+        "model_year",
+    ]
     if args.show_sample:
         sns.pairplot(train_dataset[column_names], diag_kind="kde")
     plt.show()
@@ -77,8 +102,12 @@ def main():
         model = get_model(data_normalizer)
         print(model.summary())
         if args.verbose == 0:
-            print(f"Training model for {args.epochs} epochs with batch_size={args.batch_size}")
-            print(f"NOTE: no progress will be reported as you chose --verbose={args.verbose}")
+            print(
+                f"Training model for {args.epochs} epochs with batch_size={args.batch_size}"
+            )
+            print(
+                f"NOTE: no progress will be reported as you chose --verbose={args.verbose}"
+            )
         hist = model.fit(
             train_features,
             train_labels,
