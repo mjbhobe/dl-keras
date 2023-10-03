@@ -143,18 +143,18 @@ def main():
         help="Model version. 1=base, 2=1 hidden layer, 3=2 hidden layers, \n"
         + "4=2 hidden layers + dropout, 5=2 hidden layers + dropout + batch norm  (default 1)",
     )
-    parser.add_argument(
-        "--val_split",
-        type=float,
-        default=0.20,
-        help="Percentage of train set to use for cross-validation (default=0.2)",
-    )
-    parser.add_argument(
-        "--verbose",
-        type=int,
-        default=1,
-        help="Verbosity mode. 0=silent, 1=progress bar, 2=one line per epoch (default 1).",
-    )
+    # parser.add_argument(
+    #     "--val_split",
+    #     type=float,
+    #     default=0.20,
+    #     help="Percentage of train set to use for cross-validation (default=0.2)",
+    # )
+    # parser.add_argument(
+    #     "--verbose",
+    #     type=int,
+    #     default=1,
+    #     help="Verbosity mode. 0=silent, 1=progress bar, 2=one line per epoch (default 1).",
+    # )
     parser.add_argument(
         "--dropout",
         type=float,
