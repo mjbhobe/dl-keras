@@ -3,7 +3,6 @@ import os
 
 os.environ["KERAS_BACKEND"] = "torch"
 
-import numpy as np
 import keras
 from keras import layers
 import torch
@@ -45,7 +44,7 @@ class CustomModel(keras.Model):
         # return dict of metrics & calculated values
         return {m.name: m.result() for m in self.metrics}
 
-    def train_step(self, data):
+    def test_step(self, data):
         """add custom evaluation step"""
         X, y = data
         # run prediction
