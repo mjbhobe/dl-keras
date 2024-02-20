@@ -129,7 +129,7 @@ def setupScilab():
         pass
 
     try:
-        plt.style.use('seaborn')
+        plt.style.use('seaborn-v0_8')
     except NameError:
         # Matplotlib was not imported, so skip Matplotlib tweaks
         print("Skipping Matplotlib tweaks", flush=True)
