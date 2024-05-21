@@ -16,6 +16,7 @@ from tensorflow.keras.datasets import mnist
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 import kr_helper_funcs as kru
+from cl_options import TrainingArgsParser
 
 SEED = kru.seed_all()
 kru.setupSciLabModules()
@@ -54,21 +55,33 @@ VALIDATION_SPLIT = 0.2
 DO_TRAINING = True
 DO_PREDICTIONS = True
 
-if DO_TRAINING:
+parser = TrainingArgsParser()
+args = parser.parse_args()
 
-    def build_model():
-        model = Sequential(
-            [
-                Dense(512, input_shape=(FLATTENED_SHAPE,), activation="relu"),
-                Dense(NUM_CLASSES, activation="softmax"),
-            ]
-        )
-        model.compile(
-            loss="categorical_crossentropy", optimizer="rmsprop", metrics=["accuracy"]
-        )
-        return model
 
-    model = build_model()
+def build_model(l2_reg=None):
+    l2 = None if l2_reg is None else tf.keras.regularizers.L2(l2_reg)
+    if l2 is not None:
+        print(f"Using L2 regularization = {l2_reg}", flush=True)
+    model = Sequential(
+        [
+            Dense(
+                512,
+                input_shape=(FLATTENED_SHAPE,),
+                activation="relu",
+                kernel_regularizer=l2,
+            ),
+            Dense(NUM_CLASSES, activation="softmax"),
+        ]
+    )
+    model.compile(
+        loss="categorical_crossentropy", optimizer="rmsprop", metrics=["accuracy"]
+    )
+    return model
+
+
+if args.train:
+    model = build_model(args.l2_reg)
     print(model.summary())
 
     print("Training model...")
@@ -76,11 +89,15 @@ if DO_TRAINING:
         X_train,
         y_train,
         validation_split=VALIDATION_SPLIT,
-        epochs=EPOCHS,
-        batch_size=BATCH_SIZE,
-        verbose=2,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
     )
     kru.show_plots(hist.history, metric="accuracy")
+    kru.save_model(model, MODEL_SAVE_PATH)
+    del model
+
+if args.eval:
+    model = kru.load_model(MODEL_SAVE_PATH)
 
     # evaluate performance
     print("Evaluating performance...")
@@ -88,11 +105,9 @@ if DO_TRAINING:
     print(f"  Training data -> loss: {loss:.4f} - acc: {acc:.4f}")
     loss, acc = model.evaluate(X_test, y_test)
     print(f"  Testing data  -> loss: {loss:.4f} - acc: {acc:.4f}")
-
-    kru.save_model(model, MODEL_SAVE_PATH)
     del model
 
-if DO_PREDICTIONS:
+if args.pred:
     # run predictions
     model = kru.load_model(MODEL_SAVE_PATH)
 
