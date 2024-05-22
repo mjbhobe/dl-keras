@@ -1,5 +1,5 @@
 """ mnist2.py: multiclass digits image classification
-    Using 1 layer simple base model """
+    Using multi-layer (3 layer) model & dropout regularization """
 
 import warnings
 
@@ -26,7 +26,7 @@ print(f"Using Tensorflow: {tf.__version__}.")
 IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS = 28, 28, 1
 FLATTENED_SHAPE = IMAGE_WIDTH * IMAGE_HEIGHT * NUM_CHANNELS
 NUM_CLASSES = 10
-MODEL_SAVE_NAME = "keras_mnist.h5"
+MODEL_SAVE_NAME = "keras_mnist3.h5"
 MODEL_SAVE_PATH = pathlib.Path(__file__).cwd() / "model_states" / MODEL_SAVE_NAME
 
 # load & pre-process the data
@@ -45,16 +45,15 @@ print(
     f"-  X_test.shape: {X_test.shape} - y_test.shape: {y_test.shape}"
 )
 
-# training hyper-parameters
 N_HIDDEN = 128
 
-# all training hyper-params from command line
+# training hyper-parameters from command line
 parser = TrainingArgsParser()
 args = parser.parse_args()
 
 
-def build_model():
-    # the base model for MNIST digits classification
+def build_model(dropout_rate):
+    # adding more layers to base model
     model = tf.keras.models.Sequential(
         [
             tf.keras.layers.Dense(
@@ -63,6 +62,19 @@ def build_model():
                 activation="relu",
                 name="input_layer_1",
             ),
+            tf.keras.layers.Dropout(dropout_rate),
+            tf.keras.layers.Dense(
+                N_HIDDEN,
+                activation = "relu",
+                name = "hidden_layer_1",
+            ),
+            tf.keras.layers.Dropout(dropout_rate),
+            tf.keras.layers.Dense(
+                N_HIDDEN,
+                activation = "relu",
+                name = "hidden_layer_2",
+            ),
+            tf.keras.layers.Dropout(dropout_rate),
             tf.keras.layers.Dense(NUM_CLASSES, name="output_layer_1", activation="softmax"),
         ]
     )
@@ -73,7 +85,7 @@ def build_model():
 
 
 if args.train:
-    model = build_model()
+    model = build_model(args.do)
     print(model.summary())
 
     print("Training model...")
@@ -121,13 +133,14 @@ if args.pred:
     )
     del model
 
-# ------------------------------------------------
-# Base model performance
-#   epochs=50, batch_size=128, 1 layer, opt=SGD
-# Train     -> loss: 0.1572  acc: 0.9560
-# Test      -> loss: 0.1606  acc: 0.9537
+# -----------------------------------------------------------------------
+# Deeper (3 layer) model performance
+#   epochs=50, batch_size=128, 3 layers, opt=SGD, dropout=0.10
+# Train     -> loss: 0.0764  acc: 0.9786
+# Test      -> loss: 0.1000  acc: 0.9705
 # Analysis:
 #  - Model is not overfitting (small diff between
 #     train & test accuracies)
-#  - Model performance could improve further
-# ------------------------------------------------
+#  - Model performance improved slightly (more
+#     layers, still better performance?)
+# -----------------------------------------------------------------------

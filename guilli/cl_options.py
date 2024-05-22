@@ -13,6 +13,7 @@ class TrainingArgsParser(argparse.ArgumentParser):
         --train (bool - default=False): specify to train the model
         --eval (bool - default=False): specify to evaluate model performance on a dataset post training
         --pred (bool - default=False): specify to run predictions
+        --val_split (float - defauly=0.2): the validation split to use
         --show_sample (bool - default=False): specify to show random sample from test dataset
         --epochs=N (int - default=25): specify the number of epochs for which module is trained
         --batch_size=N (int - default=64): specify the number batch size to use
@@ -113,6 +114,27 @@ class TrainingArgsParser(argparse.ArgumentParser):
             type=int,
             default=64,
             help="Batch size for training & cross-validation (default 64)",
+        )
+
+        self.add_argument(
+            "--verbose",
+            type=int,
+            default=1,
+            help="Set verbosity of training output (0, 1 or 2)",
+        )
+
+        self.add_argument(
+            "--val_split",
+            type=float,
+            default=0.20,
+            help="Validation split (default 0.20)",
+        )
+
+        self.add_argument(
+            "--do",
+            type=float,
+            default=0.20,
+            help="Dropout percentage for a layer (default=0.20)",
         )
 
         self.add_argument(
