@@ -13,7 +13,6 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import pathlib
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.datasets import mnist
 import kr_helper_funcs as kru
 from cl_options import TrainingArgsParser
 
@@ -27,9 +26,13 @@ IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS = 28, 28, 1
 FLATTENED_SHAPE = IMAGE_WIDTH * IMAGE_HEIGHT * NUM_CHANNELS
 NUM_CLASSES = 10
 MODEL_SAVE_NAME = "keras_mnist3.h5"
-MODEL_SAVE_PATH = pathlib.Path(__file__).cwd() / "model_states" / MODEL_SAVE_NAME
+MODEL_SAVE_PATH = pathlib.Path(__file__).parent / "model_states" / MODEL_SAVE_NAME
+assert os.path.exists(
+    MODEL_SAVE_PATH
+), f"FATAL model state save path does not exist - {MODEL_SAVE_PATH}!"
 
 # load & pre-process the data
+mnist = tf.keras.datasets.mnist
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
 print(
     f"Loaded data: X_train.shape: {X_train.shape} - y_train.shape: {y_train.shape} "
@@ -65,17 +68,19 @@ def build_model(dropout_rate):
             tf.keras.layers.Dropout(dropout_rate),
             tf.keras.layers.Dense(
                 N_HIDDEN,
-                activation = "relu",
-                name = "hidden_layer_1",
+                activation="relu",
+                name="hidden_layer_1",
             ),
             tf.keras.layers.Dropout(dropout_rate),
             tf.keras.layers.Dense(
                 N_HIDDEN,
-                activation = "relu",
-                name = "hidden_layer_2",
+                activation="relu",
+                name="hidden_layer_2",
             ),
             tf.keras.layers.Dropout(dropout_rate),
-            tf.keras.layers.Dense(NUM_CLASSES, name="output_layer_1", activation="softmax"),
+            tf.keras.layers.Dense(
+                NUM_CLASSES, name="output_layer_1", activation="softmax"
+            ),
         ]
     )
     model.compile(
