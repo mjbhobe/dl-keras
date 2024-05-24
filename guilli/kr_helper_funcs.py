@@ -14,12 +14,14 @@ Usage:
 
 # imports & tweaks
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 import sys
 import os
+
 # reduce warnings overload from Tensorflow (errors & fatals only!)
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 import random
 import numpy as np
@@ -31,7 +33,7 @@ import itertools
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
-USING_TF2 = (tf.__version__.startswith('2'))
+USING_TF2 = tf.__version__.startswith("2")
 # seed = 123
 
 # os.environ['PYTHONHASHSEED'] = str(seed)
@@ -55,22 +57,22 @@ __author__ = "Manish Bhobe"
 def seed_all(seed=None):
     # to ensure that you get consistent results across runs & machines
     """seed all random number generators to get consistent results
-       across multiple runs ON SAME MACHINE - you may get different results
-       on a different machine (architecture) & that is to be expected
+    across multiple runs ON SAME MACHINE - you may get different results
+    on a different machine (architecture) & that is to be expected
 
-       @params:
-            - seed (optional): seed value that you choose to see everything. Can be None 
-              (default value). If None, the code chooses a random uint between np.uint32.min
-              & np.unit32.max
-        @returns:
-            - if parameter seed=None, then function returns the randomly chosen seed, else it
-              returns value of the parameter passed to the function
+    @params:
+         - seed (optional): seed value that you choose to see everything. Can be None
+           (default value). If None, the code chooses a random uint between np.uint32.min
+           & np.unit32.max
+     @returns:
+         - if parameter seed=None, then function returns the randomly chosen seed, else it
+           returns value of the parameter passed to the function
     """
     if seed is None:
         # pick a random uint32 seed
         seed = random.randint(np.iinfo(np.uint32).min, np.iinfo(np.uint32).max)
     random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
 
     if USING_TF2:
@@ -87,9 +89,14 @@ def setupSciLabModules():
     setup libraries such as Numpy, Pandas, seaborn etc.
     """
     try:
-        def float_formatter(x): return '%.4f' % x
-        np.set_printoptions(formatter={'float_kind': float_formatter})
-        np.set_printoptions(threshold=np.inf, suppress=True, precision=4, linewidth=1024)
+
+        def float_formatter(x):
+            return "%.4f" % x
+
+        np.set_printoptions(formatter={"float_kind": float_formatter})
+        np.set_printoptions(
+            threshold=np.inf, suppress=True, precision=4, linewidth=1024
+        )
     except NameError:
         # Numpy was not imported, so skip Numpy tweaks
         print("Skipping Numpy tweaks", flush=True)
@@ -97,27 +104,48 @@ def setupSciLabModules():
 
     try:
         # @see: https://towardsdatascience.com/8-commonly-used-pandas-display-options-you-should-know-a832365efa95
-        pd.set_option('display.max_rows', 100)      # display upto these many rows before truncating display
-        pd.set_option('display.max_columns', 50)    # display these many columns before truncating
-        pd.set_option('display.max_colwidth', 60)   # max width of each column before truncating
-        #pd.set_option('display.precision', 4)       # how many floating point numbers after . (setting same as Numpy)
-        pd.set_option('display.float_format', '{:,.4f}'.format)    # use comma separator when displaying numbers
-        pd.set_option('display.max_info_columns', 200)
-        pd.set_option('display.max_info_rows', 10)
+        pd.set_option(
+            "display.max_rows", 100
+        )  # display upto these many rows before truncating display
+        pd.set_option(
+            "display.max_columns", 50
+        )  # display these many columns before truncating
+        pd.set_option(
+            "display.max_colwidth", 60
+        )  # max width of each column before truncating
+        # pd.set_option('display.precision', 4)       # how many floating point numbers after . (setting same as Numpy)
+        pd.set_option(
+            "display.float_format", "{:,.4f}".format
+        )  # use comma separator when displaying numbers
+        pd.set_option("display.max_info_columns", 200)
+        pd.set_option("display.max_info_rows", 10)
     except NameError:
         # pandas was not installed
         print("Skipping pandas tweaks", flush=True)
         pass
 
     try:
-        plt.style.use('seaborn-v0_8')
+        plt.style.use("seaborn-v0_8")
     except NameError:
         # Matplotlib was not imported, so skip Matplotlib tweaks
         print("Skipping Matplotlib tweaks", flush=True)
         pass
 
     try:
-        sns.set(context='notebook', style='whitegrid', font_scale=1.2)
+        # sns.set(context='notebook', style='whitegrid', font_scale=1.2)
+        sns.set_theme(context="notebook", style="darkgrid", font_scale=1.1)
+        """
+        sns.set_style(
+            {
+                "font.sans-serif": [
+                    "SF Pro Rounded",
+                    "Verdana",
+                    "Calibri",
+                    "DejaVu Sans",
+                ]
+            }
+        )
+        """
     except NameError:
         # Seaborn was not imported, so skip Matplotlib tweaks
         print("Skipping Seaborn tweaks", flush=True)
@@ -134,15 +162,31 @@ def progbar_msg(curr_tick, max_tick, head_msg, tail_msg, final=False):
     if not final:
         prog = (curr_tick * progbar_len) // max_tick
         bal = progbar_len - (prog + 1)
-        prog_msg = '  %s (%*d/%*d) [%s%s%s] %s%s' % (
-            head_msg, len_max_tick, curr_tick, len_max_tick, max_tick, '=' * prog, '>', '.' * bal,
-            tail_msg, ' ' * 35)
-        print('\r%s' % prog_msg, end='', flush=True)
+        prog_msg = "  %s (%*d/%*d) [%s%s%s] %s%s" % (
+            head_msg,
+            len_max_tick,
+            curr_tick,
+            len_max_tick,
+            max_tick,
+            "=" * prog,
+            ">",
+            "." * bal,
+            tail_msg,
+            " " * 35,
+        )
+        print("\r%s" % prog_msg, end="", flush=True)
     else:
-        prog_msg = '  %s (%*d/%*d) [%s] %s%s\n' % (
-            head_msg, len_max_tick, max_tick, len_max_tick, max_tick, '=' * progbar_len, tail_msg,
-            ' ' * 35)
-        print('\r%s' % prog_msg, end='', flush=True)
+        prog_msg = "  %s (%*d/%*d) [%s] %s%s\n" % (
+            head_msg,
+            len_max_tick,
+            max_tick,
+            len_max_tick,
+            max_tick,
+            "=" * progbar_len,
+            tail_msg,
+            " " * 35,
+        )
+        print("\r%s" % prog_msg, end="", flush=True)
 
 
 def show_plots(history, metric=None, plot_title=None, fig_size=None):
@@ -153,14 +197,18 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
     assert type(history) is dict
 
     # we must have at least loss in the history object
-    assert 'loss' in history.keys(), f"ERROR: expecting \'loss\' as one of the metrics in history object"
+    assert (
+        "loss" in history.keys()
+    ), f"ERROR: expecting 'loss' as one of the metrics in history object"
     if metric is not None:
-        assert isinstance(metric, str), "ERROR: expecting a string value for the \'metric\' parameter"
+        assert isinstance(
+            metric, str
+        ), "ERROR: expecting a string value for the 'metric' parameter"
         assert metric in history.keys(), f"{metric} is not tracked in training history!"
 
-    loss_metrics = ['loss']
-    if 'val_loss' in history.keys():
-        loss_metrics.append('val_loss')
+    loss_metrics = ["loss"]
+    if "val_loss" in history.keys():
+        loss_metrics.append("val_loss")
     # after above lines, loss_metrics = ['loss', 'val_loss']
 
     other_metrics = []
@@ -176,9 +224,15 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
 
     with sns.axes_style("darkgrid"):
         sns.set_context("notebook", font_scale=1.1)
-        sns.set_style({"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]})
+        sns.set_style(
+            {"font.sans-serif": ["Verdana", "Arial", "Calibri", "DejaVu Sans"]}
+        )
 
-        f, ax = plt.subplots(nrows=1, ncols=col_count, figsize=((16, 5) if fig_size is None else fig_size))
+        f, ax = plt.subplots(
+            nrows=1,
+            ncols=col_count,
+            figsize=((16, 5) if fig_size is None else fig_size),
+        )
         axs = ax[0] if col_count == 2 else ax
 
         # plot the losses
@@ -186,8 +240,11 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
         losses_df.plot(ax=axs)
         # ax[0].set_ylim(0.0, 1.0)
         axs.grid(True)
-        losses_title = 'Training \'loss\' vs Epochs' if len(
-            loss_metrics) == 1 else 'Training & Validation \'loss\' vs Epochs'
+        losses_title = (
+            "Training 'loss' vs Epochs"
+            if len(loss_metrics) == 1
+            else "Training & Validation 'loss' vs Epochs"
+        )
         axs.title.set_text(losses_title)
 
         # plot the metric, if specified
@@ -196,8 +253,11 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
             metrics_df.plot(ax=ax[1])
             ax[1].set_ylim(0.0, 1.0)
             ax[1].grid(True)
-            metrics_title = f'Training \'{other_metrics[0]}\' vs Epochs' if len(other_metrics) == 1 \
-                else f'Training & Validation \'{other_metrics[0]}\' vs Epochs'
+            metrics_title = (
+                f"Training '{other_metrics[0]}' vs Epochs"
+                if len(other_metrics) == 1
+                else f"Training & Validation '{other_metrics[0]}' vs Epochs"
+            )
             ax[1].title.set_text(metrics_title)
 
         if plot_title is not None:
@@ -207,13 +267,14 @@ def show_plots(history, metric=None, plot_title=None, fig_size=None):
         plt.close()
 
 
-def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix',
-                          cmap=plt.cm.Blues):
+def plot_confusion_matrix(
+    cm, classes, normalize=False, title="Confusion matrix", cmap=plt.cm.Blues
+):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.imshow(cm, interpolation="nearest", cmap=cmap)
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
@@ -221,16 +282,21 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     plt.yticks(tick_marks, classes)
 
     if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
-    thresh = cm.max() / 2.
+    thresh = cm.max() / 2.0
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, cm[i, j], horizontalalignment="center",
-                 color="white" if cm[i, j] > thresh else "black")
+        plt.text(
+            j,
+            i,
+            cm[i, j],
+            horizontalalignment="center",
+            color="white" if cm[i, j] > thresh else "black",
+        )
 
     plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
+    plt.ylabel("True label")
+    plt.xlabel("Predicted label")
 
 
 def time_taken_as_str(start_time, end_time):
@@ -243,18 +309,18 @@ def time_taken_as_str(start_time, end_time):
     mins_elapsed, secs_elapsed = divmod(secs_elapsed, SECS_PER_MIN)
 
     if hrs_elapsed > 0:
-        ret = '%d hrs %d mins %d secs' % (hrs_elapsed, mins_elapsed, secs_elapsed)
+        ret = "%d hrs %d mins %d secs" % (hrs_elapsed, mins_elapsed, secs_elapsed)
     elif mins_elapsed > 0:
-        ret = 'Time taken: %d mins %d secs' % (mins_elapsed, secs_elapsed)
+        ret = "Time taken: %d mins %d secs" % (mins_elapsed, secs_elapsed)
     elif secs_elapsed > 1:
-        ret = 'Time taken: %d secs' % (secs_elapsed)
+        ret = "Time taken: %d secs" % (secs_elapsed)
     else:
-        ret = 'Time taken - less than 1 sec'
+        ret = "Time taken - less than 1 sec"
     return ret
 
 
 def save_model(model, file_path):
-    """ save model structure & weights to path provided """
+    """save model structure & weights to path provided"""
     save_dir, save_filename = os.path.split(file_path)
 
     if (save_dir != "") and (not os.path.exists(save_dir)):
@@ -273,7 +339,7 @@ def save_model(model, file_path):
 
 
 def load_model(file_path, custom_metrics_map=None):
-    """ load Keras model from path """
+    """load Keras model from path"""
     from tensorflow.keras import models
 
     if not os.path.exists(file_path):
@@ -287,22 +353,26 @@ def load_model(file_path, custom_metrics_map=None):
     return model
 
 
-def save_model2(model, base_file_name, save_dir=os.path.join('.', 'model_states')):
-    """ save everything to one HDF5 file """
+def save_model2(model, base_file_name, save_dir=os.path.join(".", "model_states")):
+    """save everything to one HDF5 file"""
 
     # save the model
-    if not base_file_name.lower().endswith('.h5'):
-        base_file_name = base_file_name + '.h5'
+    if not base_file_name.lower().endswith(".h5"):
+        base_file_name = base_file_name + ".h5"
 
     # base_file_name could be just a file name or complete path
-    if (len(os.path.dirname(base_file_name)) == 0):
+    if len(os.path.dirname(base_file_name)) == 0:
         # only file name specified e.g. kr_model.h5. We'll use save_dir to save
         if not os.path.exists(save_dir):
             # check if save_dir exists, else create it
             try:
                 os.mkdir(save_dir)
             except OSError as err:
-                print("Unable to create folder {} to save Keras model. Can't continue!".format(save_dir))
+                print(
+                    "Unable to create folder {} to save Keras model. Can't continue!".format(
+                        save_dir
+                    )
+                )
                 raise err
         model_save_path = os.path.join(save_dir, base_file_name)
     else:
@@ -313,24 +383,32 @@ def save_model2(model, base_file_name, save_dir=os.path.join('.', 'model_states'
             try:
                 os.mkdir(save_dir)
             except OSError as err:
-                print("Unable to create folder {} to save Keras model. Can't continue!".format(save_dir))
+                print(
+                    "Unable to create folder {} to save Keras model. Can't continue!".format(
+                        save_dir
+                    )
+                )
                 raise err
 
         model_save_path = base_file_name
 
     # model_save_path = os.path.join(save_dir, base_file_name)
     model.save(model_save_path)
-    print('Saved model to file %s' % model_save_path)
+    print("Saved model to file %s" % model_save_path)
 
 
-def load_model2(base_file_name, save_dir=os.path.join('.', 'model_states'),
-                custom_metrics_map=None, use_tf_keras_impl=True):
+def load_model2(
+    base_file_name,
+    save_dir=os.path.join(".", "model_states"),
+    custom_metrics_map=None,
+    use_tf_keras_impl=True,
+):
     """load model from HDF5 file"""
-    if not base_file_name.lower().endswith('.h5'):
-        base_file_name = base_file_name + '.h5'
+    if not base_file_name.lower().endswith(".h5"):
+        base_file_name = base_file_name + ".h5"
 
     # base_file_name could be just a file name or complete path
-    if (len(os.path.dirname(base_file_name)) == 0):
+    if len(os.path.dirname(base_file_name)) == 0:
         # only file name specified e.g. kr_model.h5
         model_save_path = os.path.join(save_dir, base_file_name)
     else:
@@ -338,7 +416,7 @@ def load_model2(base_file_name, save_dir=os.path.join('.', 'model_states'),
         model_save_path = base_file_name
 
     if not os.path.exists(model_save_path):
-        raise IOError('Cannot find model state file at %s!' % model_save_path)
+        raise IOError("Cannot find model state file at %s!" % model_save_path)
 
     # load the state/weights etc.
     if use_tf_keras_impl:
@@ -350,12 +428,12 @@ def load_model2(base_file_name, save_dir=os.path.join('.', 'model_states'),
     # @see: https://github.com/keras-team/keras/issues/3911
     # useful when you have custom metrics
     model = load_model(model_save_path, custom_objects=custom_metrics_map)
-    print('Loaded Keras model from %s' % model_save_path)
+    print("Loaded Keras model from %s" % model_save_path)
     return model
 
 
 def save_model_json(model, file_path):
-    """ save the model structure to a JSON file & weights to HD5 """
+    """save the model structure to a JSON file & weights to HD5"""
     save_dir, save_filename = os.path.split(file_path)
     file_name, file_ext = os.path.splitext(save_filename)
 
@@ -386,16 +464,16 @@ def save_model_json(model, file_path):
 
 
 def load_model_json(model, json_file_path, weights_path=None):
-    """ 
-    loads model structure & weights from JSON 
+    """
+    loads model structure & weights from JSON
         @params:
-            file_path - full (or relative) path to JSON file. 
+            file_path - full (or relative) path to JSON file.
                 If this path does not exist, exception is thrown
             weights_path (optional) - use if weights are stored in a
                 separate file name, they will be loaded from that path.
                 If this path is specified and does not exist, exception is thrown
          Examples:
-             call -> load_model_json(json_file_path = './model_states/model.json') 
+             call -> load_model_json(json_file_path = './model_states/model.json')
                JSON will be loaded from './model_states/model.json'
                Weights will be loaded from './model_states/model.h5' or ''./model_states/model.hd5'
 
@@ -417,37 +495,45 @@ def load_model_json(model, json_file_path, weights_path=None):
 
     if weights_path is None:
         file_name, file_ext = os.path.splitext(save_filename)
-        weights_path1 = os.path.join(save_dir, file_name, '.h5')
+        weights_path1 = os.path.join(save_dir, file_name, ".h5")
         if os.path.exists(weights_path1):
             weights_path = weights_path1
         else:
-            weights_path2 = os.path.join(save_dir, file_name, '.hd5')
+            weights_path2 = os.path.join(save_dir, file_name, ".hd5")
             if os.path.exists(weights_path2):
                 weights_path = weights_path2
 
         if weights_path is None:
             # still none, raise exception - can't figure out weights_path
-            raise IOError(f"Cannot locate weights path - tried {weights_path1} and {weights_path2}\n" +
-                          f"Suggest you use specify explicit weights file path")
+            raise IOError(
+                f"Cannot locate weights path - tried {weights_path1} and {weights_path2}\n"
+                + f"Suggest you use specify explicit weights file path"
+            )
 
     # load model from json_file_path & weights from weights_path
     model = None
     with open(json_file_path, "r") as json_file:
         model = model_from_json(json_file.read())
         model.load_weights(weights_path)
-        print(f"Loaded Keras model structure from {json_file_path} and weights from {weights_path}")
+        print(
+            f"Loaded Keras model structure from {json_file_path} and weights from {weights_path}"
+        )
 
     return model
 
 
-def save_model_json2(model, base_file_name, save_dir=os.path.join('.', 'model_states')):
-    """ save the model structure to JSON & weights to HD5 """
+def save_model_json2(model, base_file_name, save_dir=os.path.join(".", "model_states")):
+    """save the model structure to JSON & weights to HD5"""
     # check if save_dir exists, else create it
     if not os.path.exists(save_dir):
         try:
             os.mkdir(save_dir)
         except OSError as err:
-            print("Unable to create folder {} to save Keras model. Can't continue!".format(save_dir))
+            print(
+                "Unable to create folder {} to save Keras model. Can't continue!".format(
+                    save_dir
+                )
+            )
             raise err
 
     # model structure is saved to $(save_dir)/base_file_name.json
@@ -463,9 +549,10 @@ def save_model_json2(model, base_file_name, save_dir=os.path.join('.', 'model_st
     print("Saved model to files %s and %s" % (json_file_path, h5_file_path))
 
 
-def load_model_json2(base_file_name, load_dir=os.path.join('.', 'keras_models'),
-                     use_tf_keras_impl=True):
-    """ loads model structure & weights from previously saved state """
+def load_model_json2(
+    base_file_name, load_dir=os.path.join(".", "keras_models"), use_tf_keras_impl=True
+):
+    """loads model structure & weights from previously saved state"""
     # model structure is loaded $(load_dir)/base_file_name.json
     # weights are loaded from $(load_dir)/base_file_name.h5
 
@@ -486,28 +573,32 @@ def load_model_json2(base_file_name, load_dir=os.path.join('.', 'keras_models'),
             loaded_model.load_weights(h5_file_path)
         print("Loaded model from files %s and %s" % (json_file_path, h5_file_path))
     else:
-        msg = "Model file(s) not found in %s! Expecting to find %s and %s in this directory." % (
-            load_dir, (base_file_name + ".json"), (base_file_name + ".h5"))
+        msg = (
+            "Model file(s) not found in %s! Expecting to find %s and %s in this directory."
+            % (load_dir, (base_file_name + ".json"), (base_file_name + ".h5"))
+        )
         raise IOError(msg)
     return loaded_model
 
 
-def extract_files(arch_path, to_dir='.'):
+def extract_files(arch_path, to_dir="."):
     """extracts all files from a archive file (zip, tar. tar.bz2 file)
-       at arch_path to the 'to_dir' directory """
+    at arch_path to the 'to_dir' directory"""
     import os
     import tarfile
     import zipfile
 
     if os.path.exists(arch_path):
-        supported_extensions = ['.zip', '.tar.gz', '.tgz', '.tar.bz2', '.tbz', '.npz']
+        supported_extensions = [".zip", ".tar.gz", ".tgz", ".tar.bz2", ".tbz", ".npz"]
         arch_exts = [arch_path.endswith(ext) for ext in supported_extensions]
 
         if np.any(arch_exts):
             # if extension is any of our supported extension, we are ok
-            opener_triplets = [('zipfile.ZipFile', zipfile.ZipFile, 'r'),
-                               ('tarfile.open (for .tar.gz or .tgz file)', tarfile.open, 'r:gz'),
-                               ('tarfile.open (for .tar.bz2 or .tbz file)', tarfile.open, 'r:bz2')]
+            opener_triplets = [
+                ("zipfile.ZipFile", zipfile.ZipFile, "r"),
+                ("tarfile.open (for .tar.gz or .tgz file)", tarfile.open, "r:gz"),
+                ("tarfile.open (for .tar.bz2 or .tbz file)", tarfile.open, "r:bz2"),
+            ]
             opened_successfully = False
             curr_dir = os.getcwd()
             os.chdir(to_dir)
@@ -518,7 +609,10 @@ def extract_files(arch_path, to_dir='.'):
                         # try various options to open archive file
                         with opener(arch_path, mode) as f:
                             opened_successfully = True
-                            print(f"Extracting files from archive using {opener_str} opener...", flush=True)
+                            print(
+                                f"Extracting files from archive using {opener_str} opener...",
+                                flush=True,
+                            )
                             f.extractall()
                             break
                     except:
@@ -526,9 +620,13 @@ def extract_files(arch_path, to_dir='.'):
             finally:
                 os.chdir(curr_dir)
                 if not opened_successfully:
-                    raise ValueError(f"Could not extract '{arch_path}' as no appropriate extractor is found")
+                    raise ValueError(
+                        f"Could not extract '{arch_path}' as no appropriate extractor is found"
+                    )
         else:
-            raise ValueError(f"Unsupported archive file {arch_path} - only one of {supported_extensions} supported")
+            raise ValueError(
+                f"Unsupported archive file {arch_path} - only one of {supported_extensions} supported"
+            )
     else:
         raise ValueError(f"{arch_path} - path does not exist!")
 
@@ -561,4 +659,4 @@ def f1_score(y_true, y_pred):
 def r2_score(y_true, y_pred):
     SS_res = K.sum(K.square(y_true - y_pred))
     SS_tot = K.sum(K.square(y_true - K.mean(y_true)))
-    return (1 - SS_res / (SS_tot + K.epsilon()))
+    return 1 - SS_res / (SS_tot + K.epsilon())
