@@ -16,7 +16,7 @@ import tensorflow as tf
 import kr_helper_funcs as kru
 from cl_options import TrainingArgsParser
 
-SEED = kru.seed_all()
+SEED = kru.seed_all(43)
 kru.setupSciLabModules()
 
 print(f"Using Tensorflow: {tf.__version__}.")
