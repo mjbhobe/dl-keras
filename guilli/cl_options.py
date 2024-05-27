@@ -168,24 +168,12 @@ class TrainingArgsParser(argparse.ArgumentParser):
         # display information
         if print_args:
             print("Parsed command line parameters:")
-            print(f"  - args.train {self.args.train}")
-            print(f"  - args.eval {self.args.eval}")
-            print(f"  - args.pred {self.args.pred}")
-            print(f"  - args.show_sample {self.args.show_sample}")
-            print(f"  - args.epochs {self.args.epochs}")
-            print(f"  - args.batch_size {self.args.batch_size}")
-            print(f"  - args.lr {self.args.lr:,.6f}")
-            print(f"  - args.l2_reg {self.args.l2_reg:,.6f}")
+            for arg in vars(self.args):
+                print(f" --{arg} {getattr(self.args, arg)}")
         else:
             self.logger.info("Parsed command line parameters:")
-            self.logger.info(f"  - args.train {self.args.train}")
-            self.logger.info(f"  - args.eval {self.args.eval}")
-            self.logger.info(f"  - args.pred {self.args.pred}")
-            self.logger.info(f"  - args.show_sample {self.args.show_sample}")
-            self.logger.info(f"  - args.epochs {self.args.epochs}")
-            self.logger.info(f"  - args.batch_size {self.args.batch_size}")
-            self.logger.info(f"  - args.lr {self.args.lr:,.6f}")
-            self.logger.info(f"  - args.l2_reg {self.args.l2_reg:,.6f}")
+            for arg in vars(self.args):
+                self.logger.info(f" --{arg} {getattr(self.args, arg)}")
 
 
 def parse_command_line(help_banner=""):

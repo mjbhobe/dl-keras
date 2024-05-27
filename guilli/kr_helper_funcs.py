@@ -34,21 +34,11 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 
 USING_TF2 = tf.__version__.startswith("2")
-# seed = 123
-
-# os.environ['PYTHONHASHSEED'] = str(seed)
-# random.seed(seed)
-# np.random.seed(seed)
-
-# if USING_TF2:
-#     tf.random.set_seed(seed)
-# else:
-#     tf.compat.v1.set_random_seed(seed)
 
 # -----------------------------------------------------------------------------------------------
 # Generic helper functions
 # -----------------------------------------------------------------------------------------------
-KRU_FAV_SEED = 41
+KRU_FAV_SEED = 43
 
 __version__ = "1.5.0"
 __author__ = "Manish Bhobe"
@@ -340,7 +330,7 @@ def save_model(model, file_path):
 
 def load_model(file_path, custom_metrics_map=None):
     """load Keras model from path"""
-    from tensorflow.keras import models
+    # from tensorflow.keras import models
 
     if not os.path.exists(file_path):
         raise IOError(f"Cannot load Keras model {file_path} - invalid path!")
@@ -348,237 +338,10 @@ def load_model(file_path, custom_metrics_map=None):
     # load the state/weights etc. from file_path
     # @see: https://github.com/keras-team/keras/issues/3911
     # useful when you have custom metrics
-    model = models.load_model(file_path, custom_objects=custom_metrics_map)
+    # model = models.load_model(file_path, custom_objects=custom_metrics_map)
+    model = tf.keras.models.load_model(file_path)
     print(f"Keras model loaded from {file_path}")
     return model
-
-
-def save_model2(model, base_file_name, save_dir=os.path.join(".", "model_states")):
-    """save everything to one HDF5 file"""
-
-    # save the model
-    if not base_file_name.lower().endswith(".h5"):
-        base_file_name = base_file_name + ".h5"
-
-    # base_file_name could be just a file name or complete path
-    if len(os.path.dirname(base_file_name)) == 0:
-        # only file name specified e.g. kr_model.h5. We'll use save_dir to save
-        if not os.path.exists(save_dir):
-            # check if save_dir exists, else create it
-            try:
-                os.mkdir(save_dir)
-            except OSError as err:
-                print(
-                    "Unable to create folder {} to save Keras model. Can't continue!".format(
-                        save_dir
-                    )
-                )
-                raise err
-        model_save_path = os.path.join(save_dir, base_file_name)
-    else:
-        # user passed in complete path e.g. './save_states/kr_model.h5'
-        # create the directories if they don't exist
-        save_dir = os.path.dirname(base_file_name)
-        if not os.path.exists(save_dir):
-            try:
-                os.mkdir(save_dir)
-            except OSError as err:
-                print(
-                    "Unable to create folder {} to save Keras model. Can't continue!".format(
-                        save_dir
-                    )
-                )
-                raise err
-
-        model_save_path = base_file_name
-
-    # model_save_path = os.path.join(save_dir, base_file_name)
-    model.save(model_save_path)
-    print("Saved model to file %s" % model_save_path)
-
-
-def load_model2(
-    base_file_name,
-    save_dir=os.path.join(".", "model_states"),
-    custom_metrics_map=None,
-    use_tf_keras_impl=True,
-):
-    """load model from HDF5 file"""
-    if not base_file_name.lower().endswith(".h5"):
-        base_file_name = base_file_name + ".h5"
-
-    # base_file_name could be just a file name or complete path
-    if len(os.path.dirname(base_file_name)) == 0:
-        # only file name specified e.g. kr_model.h5
-        model_save_path = os.path.join(save_dir, base_file_name)
-    else:
-        # user passed in complete path e.g. './save_states/kr_model.h5'
-        model_save_path = base_file_name
-
-    if not os.path.exists(model_save_path):
-        raise IOError("Cannot find model state file at %s!" % model_save_path)
-
-    # load the state/weights etc.
-    if use_tf_keras_impl:
-        from tensorflow.keras.models import load_model
-    else:
-        from keras.models import load_model
-
-    # load the state/weights etc. from .h5 file
-    # @see: https://github.com/keras-team/keras/issues/3911
-    # useful when you have custom metrics
-    model = load_model(model_save_path, custom_objects=custom_metrics_map)
-    print("Loaded Keras model from %s" % model_save_path)
-    return model
-
-
-def save_model_json(model, file_path):
-    """save the model structure to a JSON file & weights to HD5"""
-    save_dir, save_filename = os.path.split(file_path)
-    file_name, file_ext = os.path.splitext(save_filename)
-
-    if not os.path.exists(save_dir):
-        # create directory from file_path, if it does not exist
-        # e.g. if file_path = '/home/user_name/keras/model_states/model.hd5' and the
-        # '/home/user_name/keras/model_states' does not exist, it is created
-        try:
-            os.mkdir(save_dir)
-        except OSError as err:
-            print(f"Unable to create folder {save_dir} to save model!")
-            raise err
-
-    # model structure is saved to $(save_dir)/file_name.json
-    # weights are saved to $(save_dir)/file_name.hd5
-    # e.g. if file_path = '/home/user_name/keras/model_states/model.hd5', then
-    # json saved to '/home/user_name/keras/model_states/model.json'
-    # weights saved to '/home/user_name/keras/model_states/model.hd5'
-    json_model = model.to_json()
-    json_file_path = os.path.join(save_dir, (file_name + ".json"))
-    h5_file_path = os.path.join(save_dir, (file_name + ".hd5"))
-
-    with open(json_file_path, "w") as json_file:
-        json_file.write(json_model)
-    # serialize weights to HDF5\n",
-    model.save_weights(h5_file_path)
-    print(f"Saved model to files {json_file_path} and weights to {h5_file_path}")
-
-
-def load_model_json(model, json_file_path, weights_path=None):
-    """
-    loads model structure & weights from JSON
-        @params:
-            file_path - full (or relative) path to JSON file.
-                If this path does not exist, exception is thrown
-            weights_path (optional) - use if weights are stored in a
-                separate file name, they will be loaded from that path.
-                If this path is specified and does not exist, exception is thrown
-         Examples:
-             call -> load_model_json(json_file_path = './model_states/model.json')
-               JSON will be loaded from './model_states/model.json'
-               Weights will be loaded from './model_states/model.h5' or ''./model_states/model.hd5'
-
-             If you have a separate file holding weights, pass it's path in the weights_file param
-              call -> load_model_json(json_file_path = './model_states/model.json',
-                                     weights_path='/home/model_weights/abc.h5')
-               JSON will be loaded from './model_states/model.json'
-               Weights will be loaded from '/home/model_weights/abc.h5'
-    """
-
-    from tensorflow.keras.models import model_from_json
-
-    save_dir, save_filename = os.path.split(json_file_path)
-
-    if not os.path.exists(json_file_path):
-        raise IOError(f"Cannot load Keras model {file_path} - invalid path!")
-
-    weights_path1, weights_path2 = None, None, None
-
-    if weights_path is None:
-        file_name, file_ext = os.path.splitext(save_filename)
-        weights_path1 = os.path.join(save_dir, file_name, ".h5")
-        if os.path.exists(weights_path1):
-            weights_path = weights_path1
-        else:
-            weights_path2 = os.path.join(save_dir, file_name, ".hd5")
-            if os.path.exists(weights_path2):
-                weights_path = weights_path2
-
-        if weights_path is None:
-            # still none, raise exception - can't figure out weights_path
-            raise IOError(
-                f"Cannot locate weights path - tried {weights_path1} and {weights_path2}\n"
-                + f"Suggest you use specify explicit weights file path"
-            )
-
-    # load model from json_file_path & weights from weights_path
-    model = None
-    with open(json_file_path, "r") as json_file:
-        model = model_from_json(json_file.read())
-        model.load_weights(weights_path)
-        print(
-            f"Loaded Keras model structure from {json_file_path} and weights from {weights_path}"
-        )
-
-    return model
-
-
-def save_model_json2(model, base_file_name, save_dir=os.path.join(".", "model_states")):
-    """save the model structure to JSON & weights to HD5"""
-    # check if save_dir exists, else create it
-    if not os.path.exists(save_dir):
-        try:
-            os.mkdir(save_dir)
-        except OSError as err:
-            print(
-                "Unable to create folder {} to save Keras model. Can't continue!".format(
-                    save_dir
-                )
-            )
-            raise err
-
-    # model structure is saved to $(save_dir)/base_file_name.json
-    # weights are saved to $(save_dir)/base_file_name.h5
-    model_json = model.to_json()
-    json_file_path = os.path.join(save_dir, (base_file_name + ".json"))
-    h5_file_path = os.path.join(save_dir, (base_file_name + ".h5"))
-
-    with open(json_file_path, "w") as json_file:
-        json_file.write(model_json)
-    # serialize weights to HDF5\n",
-    model.save_weights(h5_file_path)
-    print("Saved model to files %s and %s" % (json_file_path, h5_file_path))
-
-
-def load_model_json2(
-    base_file_name, load_dir=os.path.join(".", "keras_models"), use_tf_keras_impl=True
-):
-    """loads model structure & weights from previously saved state"""
-    # model structure is loaded $(load_dir)/base_file_name.json
-    # weights are loaded from $(load_dir)/base_file_name.h5
-
-    if use_tf_keras_impl:
-        from tensorflow.keras.models import model_from_json
-    else:
-        from keras.models import model_from_json
-
-    # load model from save_path
-    loaded_model = None
-    json_file_path = os.path.join(load_dir, (base_file_name + ".json"))
-    h5_file_path = os.path.join(load_dir, (base_file_name + ".h5"))
-
-    if os.path.exists(json_file_path) and os.path.exists(h5_file_path):
-        with open(json_file_path, "r") as json_file:
-            loaded_model_json = json_file.read()
-            loaded_model = model_from_json(loaded_model_json)
-            loaded_model.load_weights(h5_file_path)
-        print("Loaded model from files %s and %s" % (json_file_path, h5_file_path))
-    else:
-        msg = (
-            "Model file(s) not found in %s! Expecting to find %s and %s in this directory."
-            % (load_dir, (base_file_name + ".json"), (base_file_name + ".h5"))
-        )
-        raise IOError(msg)
-    return loaded_model
 
 
 def extract_files(arch_path, to_dir="."):
