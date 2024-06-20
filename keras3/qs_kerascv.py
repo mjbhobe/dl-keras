@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os
+import os, sys
 
 os.environ["KERAS_BACKEND"] = "tensorflow"  # "tensorflow" or "jax" or "torch"!
 
@@ -8,6 +8,8 @@ import tensorflow as tf
 import keras_cv
 import tensorflow_datasets as tfds
 import keras
+
+print(f"Using Keras: {keras.__version__} - Keras CV: {keras_cv.__version__}")
 
 # Create a preprocessing pipeline with augmentations
 BATCH_SIZE = 16
@@ -50,8 +52,11 @@ train_dataset = (
 print("Creating the test dataset...", flush=True)
 test_dataset = (
     test_dataset.batch(BATCH_SIZE)
-    .map(preprocess_data, num_parallel_calls=tf.data.AUTOTUNE)
-    .prefetch(tf.data.AUTOTUNE)
+    # .map(preprocess_data, num_parallel_calls=tf.data.AUTOTUNE)
+    .map(
+        lambda x, y: preprocess_data(x, y, augment=False),
+        num_parallel_calls=tf.data.AUTOTUNE,
+    ).prefetch(tf.data.AUTOTUNE)
 )
 
 
