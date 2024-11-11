@@ -37,8 +37,9 @@ For data with N samples, the coefficients of this equation can be calculated as
 # generate synthetic data for house price, where we assume it depends
 # only on area of the house
 np.random.seed(SEED)
+NUM_ROWS = 100
 
-area = 2.5 * np.random.randn(100) + 25
+area = 2.5 * np.random.randn(NUM_ROWS) + 25
 # assume price = 25 * area + random_number
 price = 25 * area + (5 + np.random.randint(20, 50, size=len(area)))
 
@@ -49,7 +50,7 @@ print(f"Parameters -> w: {w:.3f} - b: {b:.3f}")
 
 data = np.array([area, price])
 df = pd.DataFrame(data.T, columns=["area", "price"])
-
+print(df.head())
 
 # -----------------------------------------------
 # Keras model to predict weights & bias
@@ -67,7 +68,7 @@ def build_model():
     model = Sequential(
         [
             # NOTE: we want a Linear model, so no activation!
-            Dense(1, input_shape=(1,),activation=None)
+            Dense(1, input_shape=(1,), activation=None)
         ]
     )
     model.compile(loss="mean_squared_error", optimizer="sgd")
@@ -88,9 +89,24 @@ if args.train:
         validation_split=args.val_split,
     )
     kru.show_plots(hist.history)
+    # using new Keras API
     kru.save_model(model, MODEL_SAVE_PATH)
+    # display weights
+    weight, bias = model.layers[0].get_weights()
+    print(f"Post training: w = {weight} - b = {bias}")
     del model
 
+
+# load Keras model weights & bias
+# model = build_model()
+model = kru.load_model(MODEL_SAVE_PATH)
+# model = tf.keras.saving.load_model(MODEL_SAVE_PATH)
+print(model.summary())
+weight, bias = model.layers[0].get_weights()
+
+print(f"Calculated Params: w = {w:.3f}, b = {b:.3f}")
+print(f"Trained Params: w = {weight}, b = {bias}")
+# sys.exit(-1)
 
 fig, ax = plt.subplots()
 ax.scatter(df.area, df.price, label="Data")
@@ -107,3 +123,16 @@ ax.set_ylabel("Price")
 ax.set_title("House Prices: Area vs Price")
 plt.legend(loc="best")
 plt.show()
+
+# now let's do some calculations
+NUM_TEST_ROWS = 5
+test_areas = 2.5 * np.random.randn(NUM_TEST_ROWS) + 25
+print(f"Test Areas: {test_areas.ravel()} ")
+prices_pred = w * test_areas + b
+print(f"Predicted prices : {prices_pred.ravel()} ")
+# now for Keras pred, we need to normalize areas
+test_areas_norm = (test_areas - df.area.min()) / (df.area.max() - df.area.min())
+# test_areas_norm = test_areas_norm[np.newaxis,:]
+print(f"Normalized test areas: {test_areas_norm.ravel()}")
+prices_pred_keras = model.predict(test_areas_norm)
+print(f"Predicted prices (Keras) : {prices_pred_keras.ravel()} ")
